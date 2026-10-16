@@ -1,0 +1,94 @@
+PPLA ELECTION MANAGER: PUBLISHING ON GITHUB PAGES AND SENDING UPDATES
+=====================================================================
+
+Why it goes online
+------------------
+1. Members install the web app from an https:// link (a file opened from WhatsApp
+   cannot be installed).
+2. Every later change reaches all phones from that same link, until polling day.
+   Both the web app and the Android app (APK) check it for updates.
+Members' entered data, photos and settings stay on their own phones and are never
+uploaded or touched by an update.
+
+What's in this folder
+---------------------
+  index.html             the app itself
+  version.json           the current release number; phones read it to spot updates
+  manifest.webmanifest   the app's name and icons, for installing
+  sw.js                  makes the app open offline
+  icons/                 home-screen icons
+  HOW-TO-PUBLISH.txt     this note
+Keep all of these together. Don't rename them.
+
+
+ONE-TIME SETUP: GitHub Pages (free)
+-----------------------------------
+Use a NEW, PUBLIC repository just for the web app. (Free GitHub Pages needs a public
+repository. The web app contains only the program and the colleges list, no member
+data. Keep the Android project in its own PRIVATE repository: it holds the signing key.)
+
+1. Sign in at github.com. Top right: "+" > New repository.
+   Name: ppla-desk   Visibility: Public   Click "Create repository".
+2. On the new page click "uploading an existing file". Drag in EVERYTHING from this
+   folder: index.html, version.json, manifest.webmanifest, sw.js and the icons folder.
+   Click "Commit changes".
+3. Settings > Pages. Under "Build and deployment", Source: "Deploy from a branch".
+   Branch: "main", folder "/ (root)". Save.
+4. After a minute or two the address appears at the top of that page:
+       https://<your-username>.github.io/ppla-desk/
+   Open it once on your phone to check. That address is what you share with members.
+5. Send this address to Claude Code (or put it in ppla-android/gradle.properties as
+       PPLA_UPDATE_URL=https://<your-username>.github.io/ppla-desk/
+   ) BEFORE the next APK is built. From then on the Android app updates itself from it.
+
+
+SENDING AN UPDATE (any day up to polling day)
+---------------------------------------------
+1. Claude Code runs:   python scripts/release.py 1.4
+   (this raises the build number in index.html, version.json and sw.js together)
+2. In the ppla-desk repository on github.com: "Add file" > "Upload files". Drag in
+   the changed files from the ppla-app folder (at least index.html, version.json
+   and sw.js). Commit. GitHub Pages refreshes within a minute or two.
+3. Phones:
+   - Web app: the next time it's opened with internet it loads the new version, or
+     shows "Update ready: Restart now".
+   - Android app: within a few seconds of opening with internet it downloads the new
+     page and shows "Update ready: Restart now". If a downloaded update ever fails to
+     start, the app goes back to its built-in version by itself.
+   - Anyone can also tap Data > "Check for updates". The Data tab shows the version.
+A new APK is only needed when the Android part itself changes (Claude Code will say).
+
+
+Installing on members' phones
+-----------------------------
+Android (Chrome): open the link, tap "Install app" (or Chrome menu > Install app).
+Or install the PPLA Desk APK.
+iPhone (Safari): open the link, Share button > "Add to Home Screen".
+
+
+Suggested routine for polling day
+---------------------------------
+Before the day
+  * The central desk (Main Election Office, Lahore) loads the colleges, the ballots
+    (Results > Posts & candidates) and sets its WhatsApp number under
+    "Set panel name & polling day".
+  * Save a backup (Data tab) and send that file to every polling agent. Each agent
+    opens the app, Data > Replace with a file. Every phone now has the same posts and
+    knows where to send results.
+
+On the day (polling agent)
+  * After counting: Results > Enter unit result, pick the college, type the figures,
+    take a photo of the signed result sheet (required), Save.
+  * Tap "1 · Send result message", then "2 · Send result file + photo". Both go
+    straight to the Main Election Office chat.
+
+On the day (Main Election Office, Lahore)
+  * Copy the forwarded messages into Results > Enter unit result > Paste result
+    messages (several at once). The tally updates immediately.
+  * Save the agents' result files from WhatsApp, then Data > Merge a file and select
+    them all at once: this brings in the result-sheet photos.
+  * Results > Tally shows reporting by division, photos received, and the count.
+
+Reminder: everything this app shows is an unofficial count from our own agents.
+The declared result is whatever the Election Commission / Returning Officer
+announces.

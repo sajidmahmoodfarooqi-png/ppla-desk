@@ -1,0 +1,1522 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>PPLA Election Manager</title>
+<meta name="theme-color" content="#3a3fb0">
+<meta name="ppla-build" content="13">
+<meta name="description" content="Campaign manager and unofficial results tally for PPLA elections">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="PPLA Desk">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Noto+Nastaliq+Urdu:wght@400;700&family=Source+Sans+3:wght@400;600;700&display=swap">
+<style>
+/* Layout: a ballot-desk console — stamped header with election countdown, tier tabs (Punjab › Division › Unit), dense cards below */
+:root{
+  --bg:#eef1f5; --surface:#ffffff; --surface-2:#f6f8fb; --line:#d9dee8;
+  --fg:#161a2b; --muted:#5c6378; --accent:#3a3fb0; --accent-ink:#ffffff; --accent-soft:#e3e4f8;
+  --gold:#c98a12; --flame:#e2601a; --flame-core:#f7b733; --handle:#7a4a17;
+  --strong:#1f8a52; --lean:#2f8fa8; --undec:#c98a12; --opp:#c2413a;
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"Source Sans 3","Segoe UI",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f111a; --surface:#181b28; --surface-2:#1e2232; --line:#2b3046;
+  --fg:#e8eaf3; --muted:#9aa1b8; --accent:#8e92ff; --accent-ink:#11132a; --accent-soft:#262a52;
+  --gold:#e8b44a; --flame:#ff7a33; --flame-core:#ffd060; --handle:#b07a3c; --strong:#4cc285; --lean:#5bbfd6; --undec:#e8b44a; --opp:#f07a72; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f111a; --surface:#181b28; --surface-2:#1e2232; --line:#2b3046;
+  --fg:#e8eaf3; --muted:#9aa1b8; --accent:#8e92ff; --accent-ink:#11132a; --accent-soft:#262a52;
+  --gold:#e8b44a; --flame:#ff7a33; --flame-core:#ffd060; --handle:#b07a3c; --strong:#4cc285; --lean:#5bbfd6; --undec:#e8b44a; --opp:#f07a72; color-scheme:dark}
+
+*{box-sizing:border-box}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+[hidden]{display:none!important}
+img{max-width:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.45}
+.wrap{max-width:1100px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3,.num{font-family:var(--display);letter-spacing:.01em;text-wrap:balance}
+.num{font-variant-numeric:tabular-nums}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* header */
+header.top{background:var(--surface);border-bottom:1px solid var(--line)}
+header.top .wrap{padding-block:18px 0;display:flex;flex-direction:column;gap:14px}
+.headrow{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap}
+.eyebrow{font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:600}
+h1{margin:2px 0 0;font-size:32px;line-height:1.05;font-weight:700}
+.stamp{display:flex;align-items:center;gap:12px;border:2px solid var(--accent);border-radius:10px;padding:8px 14px;color:var(--accent);transform:rotate(-1.5deg)}
+.stamp .num{font-size:34px;font-weight:700;line-height:1}
+.stamp small{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+.stamp .date{color:var(--muted);font-size:12px;font-weight:600;letter-spacing:0;text-transform:none}
+.brand{display:flex;gap:12px;align-items:flex-start}
+.torch{width:52px;height:52px;flex:none;margin-top:2px}
+.urdu{font-family:"Noto Nastaliq Urdu","Jameel Noori Nastaleeq","Urdu Typesetting",serif;font-size:15px;line-height:1.9;color:var(--muted);text-align:left}
+.urdu b{color:var(--flame);font-weight:700}
+.symtag{display:inline-flex;align-items:center;gap:3px;color:var(--flame);font-weight:700;font-size:12px}
+.symtag svg{width:14px;height:14px}
+.linkbtn{background:none;border:0;color:var(--accent);font-weight:600;padding:0;font-size:13px}
+nav.tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;margin:0 -4px}
+nav.tabs button{background:none;border:0;border-bottom:3px solid transparent;padding:10px 12px;font-family:var(--display);font-size:18px;font-weight:600;color:var(--muted);white-space:nowrap}
+nav.tabs button[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--accent)}
+nav.tabs .tier{font-family:var(--body);font-size:11px;font-weight:700;color:var(--muted);margin-left:4px;letter-spacing:.06em;text-transform:uppercase}
+
+main .wrap{padding-block:20px 80px;display:flex;flex-direction:column;gap:20px}
+section.panel{display:flex;flex-direction:column;gap:16px}
+.sechead{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.sechead h2{margin:0;font-size:24px;font-weight:700}
+.btn{border:1px solid var(--line);background:var(--surface);padding:8px 14px;border-radius:8px;font-weight:600}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.small{padding:4px 10px;font-size:13px}
+.btn.danger{color:var(--opp)}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap}
+
+/* KPI strip */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.kpi{background:var(--surface);padding:14px 16px;display:flex;flex-direction:column;gap:2px}
+.kpi .num{font-size:30px;font-weight:700;line-height:1.05}
+.kpi .lbl{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600}
+.kpi .sub{font-size:13px;color:var(--muted)}
+
+/* support bar */
+.sbar{display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--surface-2);border:1px solid var(--line)}
+.sbar span{display:block;height:100%}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.c-strong{background:var(--strong)} .c-lean{background:var(--lean)} .c-undec{background:var(--undec)} .c-opp{background:var(--opp)} .c-none{background:var(--line)}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.card h3{margin:0;font-size:19px;font-weight:700}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:16px}
+
+/* tables */
+.tscroll{overflow-x:auto;margin:0 -16px;padding:0 16px}
+table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}
+th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:700;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+td.r,th.r{text-align:right}
+tr.click{cursor:pointer} tr.click:hover td{background:var(--surface-2)}
+.cov{display:flex;align-items:center;gap:8px;min-width:120px}
+.cov .track{flex:1;height:6px;border-radius:3px;background:var(--surface-2);border:1px solid var(--line);overflow:hidden}
+.cov .fill{height:100%;background:var(--accent)}
+
+/* list rows */
+.list{display:flex;flex-direction:column}
+.row{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.datebox{width:46px;text-align:center;border:1px solid var(--line);border-radius:8px;padding:3px 0;background:var(--surface-2)}
+.datebox b{display:block;font-family:var(--display);font-size:20px;line-height:1}
+.datebox small{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700}
+.row .t{font-weight:600;min-width:0;overflow-wrap:anywhere}
+.row .m{font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+.pill{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:2px 8px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
+.p-unit{color:var(--lean)} .p-division{color:var(--gold)} .p-centre{color:var(--accent)}
+.p-done{color:var(--strong)} .p-planned{color:var(--muted)} .p-cancelled{color:var(--opp)}
+.sup{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;white-space:nowrap}
+.sup i{width:9px;height:9px;border-radius:50%}
+
+/* unit cards */
+.ucards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:12px}
+.ucard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px;text-align:left;width:100%}
+.ucard:hover{border-color:var(--accent)}
+.ucard .nm{font-weight:700;font-size:16px;overflow-wrap:anywhere}
+.ucard .meta{font-size:13px;color:var(--muted)}
+.ucard .foot{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.stale{color:var(--opp);font-weight:600}
+
+/* filters */
+.filters{display:flex;gap:8px;flex-wrap:wrap}
+.filters input,.filters select{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 10px;min-width:0}
+.filters input{flex:1 1 200px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px;font-size:14px;font-weight:600}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+
+.empty{border:1.5px dashed var(--line);border-radius:12px;padding:22px;text-align:center;color:var(--muted);display:flex;flex-direction:column;gap:10px;align-items:center}
+.empty b{color:var(--fg);font-size:16px}
+.note{font-size:13px;color:var(--muted)}
+
+/* sheet */
+.overlay{position:fixed;inset:0;background:rgb(10 12 25 / .45);z-index:40;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--surface);width:100%;max-width:560px;max-height:92vh;overflow-y:auto;border-radius:16px 16px 0 0;padding:20px max(18px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(18px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:14px}
+@media (min-width:640px){.overlay{align-items:center}.sheet{border-radius:16px}}
+.sheet h2{margin:0;font-size:24px}
+form.f{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+form.f label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);min-width:0}
+form.f .full{grid-column:1/-1}
+form.f input,form.f select,form.f textarea{background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:9px 10px;font-size:15px;text-transform:none;letter-spacing:0;font-weight:400;color:var(--fg);width:100%}
+form.f textarea{min-height:70px;resize:vertical}
+.formfoot{grid-column:1/-1;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;padding-top:4px}
+@media (max-width:480px){form.f{grid-template-columns:1fr}}
+
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;z-index:60;max-width:calc(100% - 32px)}
+.banner{background:var(--accent-soft);border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-size:14px}
+@media (prefers-reduced-motion:no-preference){.ucard,.btn{transition:border-color .15s,background .15s}}
+.banner.warn{border-color:var(--gold);background:var(--surface)}
+.tally{display:flex;flex-direction:column;gap:10px}
+.trow{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:4px 10px;align-items:center}
+.trow .rk{font-family:var(--display);font-weight:700;color:var(--muted);font-size:17px}
+/* name, panel and symbol stay separate pieces: Urdu names next to Urdu panel names would otherwise merge into one right-to-left run */
+.trow .who{min-width:0;overflow-wrap:anywhere;display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px}
+.trow .who b{font-weight:700;unicode-bidi:isolate}
+.trow .who small{color:var(--muted);unicode-bidi:isolate}
+.ucard .meta i,#tCands td{unicode-bidi:isolate}
+.trow .vv{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+.trow .vv small{display:block;font-weight:600;color:var(--muted);font-size:12px}
+.trow .bar{grid-column:2/4;height:8px;border-radius:4px;background:var(--surface-2);border:1px solid var(--line);overflow:hidden}
+.trow .bar span{display:block;height:100%;background:var(--muted)}
+.trow.lead .bar span{background:var(--accent)}
+.trow.ours .who b{color:var(--accent)}
+.tstat{font-size:13px;font-weight:600;padding:8px 10px;border-radius:8px;background:var(--surface-2);border:1px solid var(--line)}
+.tstat.safe{border-color:var(--strong);color:var(--strong)}
+fieldset{border:1px solid var(--line);border-radius:10px;padding:10px 12px 12px;margin:0;display:grid;grid-template-columns:1fr 1fr;gap:10px;min-width:0}
+fieldset legend{font-family:var(--display);font-size:18px;font-weight:700;padding:0 6px;color:var(--fg)}
+@media (max-width:480px){fieldset{grid-template-columns:1fr}}
+.warnlist{grid-column:1/-1;font-size:13px;color:var(--opp);font-weight:600;display:flex;flex-direction:column;gap:2px}
+.okline{grid-column:1/-1;font-size:13px;color:var(--strong);font-weight:600}
+textarea.code{width:100%;min-height:110px;background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:10px;font-size:14px;color:var(--fg)}
+.datacard{display:flex;flex-direction:column;gap:10px}
+.datacard p{margin:0}
+a.btn{text-decoration:none;color:var(--fg);display:inline-block}
+.seg{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.seg .seglbl{width:100%;font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+form.f .seg label{display:block;text-transform:none;letter-spacing:0;font-size:14px;color:var(--fg)}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg label span{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:6px 12px;background:var(--surface-2);font-weight:600;cursor:pointer}
+.seg label span i{width:9px;height:9px;border-radius:50%}
+.seg input:checked+span{border-color:var(--accent);background:var(--accent-soft);box-shadow:inset 0 0 0 1px var(--accent)}
+.seg input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
+.inl{display:flex;gap:6px;align-items:center}
+.officebox{border:1.5px solid var(--strong);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;background:var(--surface-2)}
+.photobox{border:1.5px dashed var(--accent);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.phrow{display:flex;gap:12px;align-items:flex-start}
+.phthumb{width:84px;height:112px;object-fit:cover;border-radius:6px;border:1px solid var(--line);background:var(--surface-2);flex:none}
+.ballothead{font-size:14px;padding:8px 10px;border-radius:8px;background:var(--accent-soft);border:1px solid var(--line)}
+.inl input{flex:1;min-width:0}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="headrow">
+      <div class="brand">
+        <svg class="torch" viewBox="0 0 64 64" role="img" aria-label="Election symbol: Torch (Mashal)"><title>Election symbol: Torch (Mashal)</title>
+          <path d="M32 3c7 9 13 14 13 23a13 13 0 0 1-26 0c0-7 4-10 7-15 1 4 3 6 5 7-1-6 0-10 1-15z" fill="var(--flame)"/>
+          <path d="M32 17c3 5 7 8 7 13a7 7 0 0 1-14 0c0-4 2-6 3-9 1 2 2 3 4 4 0-3 0-5 0-8z" fill="var(--flame-core)"/>
+          <path d="M18 39h28l-3 6H21z" fill="var(--gold)"/>
+          <path d="M23 45h18l-6 17h-6z" fill="var(--handle)"/></svg>
+        <div>
+        <div class="eyebrow" id="hdrEyebrow">Nawa-e-Asatza · Ittehad-e-Asatza Punjab · PPLA Elections</div>
+        <h1 id="hdrTitle">PPLA Election Manager</h1>
+        <div class="urdu" lang="ur" dir="rtl">نوائے اساتذہ · اتحادِ اساتذہ پنجاب — انتخابی نشان: <b>مشعل</b></div>
+        <div class="btnrow" style="align-items:center;margin-top:4px"><button class="linkbtn" id="btnSettings" type="button">Set panel name &amp; polling day</button><button class="btn small primary" id="btnInstall" type="button" hidden>Install app</button></div>
+        </div>
+      </div>
+      <div class="stamp" id="stamp" hidden>
+        <div class="num" id="daysLeft">–</div>
+        <div><small>days to polling</small><span class="date" id="pollDate"></span></div>
+      </div>
+    </div>
+    <nav class="tabs" role="tablist" id="tabs">
+      <button role="tab" data-tab="punjab" aria-selected="true">Punjab<span class="tier">Centre</span></button>
+      <button role="tab" data-tab="division" aria-selected="false">Divisions<span class="tier">Directorate</span></button>
+      <button role="tab" data-tab="units" aria-selected="false">Units<span class="tier">Colleges</span></button>
+      <button role="tab" data-tab="activities" aria-selected="false">Outreach</button>
+      <button role="tab" data-tab="team" aria-selected="false">Team</button>
+      <button role="tab" data-tab="results" aria-selected="false">Results<span class="tier">Unofficial</span></button>
+      <button role="tab" data-tab="data" aria-selected="false">Data</button>
+    </nav>
+  </div>
+</header>
+
+<main><div class="wrap">
+  <div class="banner" id="updBanner" hidden></div>
+  <div class="banner" id="offline" hidden>This browser is blocking local storage, so entries will be lost when you close the page. Use Data › Save backup before closing.</div>
+
+  <!-- PUNJAB -->
+  <section class="panel" id="tab-punjab">
+    <div class="kpis" id="pKpis"></div>
+    <div class="card">
+      <div class="sechead"><h3>Support across Punjab</h3><div class="legend" id="legend"></div></div>
+      <div class="sbar" id="pBar"></div>
+      <div class="note" id="pBarNote"></div>
+    </div>
+    <div class="card">
+      <div class="sechead"><h3>Division scoreboard</h3><span class="note">Tap a division to open it</span></div>
+      <div class="tscroll"><table id="divTable"></table></div>
+    </div>
+    <div class="card"><div class="sechead"><h3>Priority targets</h3><button class="btn small" id="pBrief" type="button">Share today's brief</button></div><span class="note">The largest units that are undecided, leaning or not yet assessed, with no contact in 7+ days. Win these first.</span><div class="list" id="pPriority"></div></div>
+    <div class="grid2">
+      <div class="card"><div class="sechead"><h3>Next 14 days</h3><button class="btn small" data-add="activity" type="button">Plan outreach</button></div><div class="list" id="pUpcoming"></div></div>
+      <div class="card"><div class="sechead"><h3>Units needing a visit</h3><span class="note">No contact in 21+ days</span></div><div class="list" id="pStale"></div></div>
+    </div>
+  </section>
+
+  <!-- DIVISION -->
+  <section class="panel" id="tab-division" hidden>
+    <div class="chips" id="divChips"></div>
+    <div class="sechead"><h2 id="dTitle"></h2><div class="btnrow"><button class="btn small" type="button" id="dBrief">Share division brief</button><button class="btn small" type="button" id="dAddUnit">Add unit</button><button class="btn small primary" type="button" id="dAddAct">Plan outreach</button></div></div>
+    <div class="kpis" id="dKpis"></div>
+    <div class="sbar" id="dBar"></div>
+    <div class="card"><div class="sechead"><h3>District scoreboard</h3><span class="note">Tap a district to see its colleges</span></div><div class="tscroll"><table id="dDists"></table></div></div>
+    <div class="card"><div class="sechead"><h3>Priority targets</h3><span class="note">Largest undecided, leaning or unassessed units, no contact in 7+ days</span></div><div class="list" id="dPriority"></div></div>
+    <div class="grid2">
+      <div class="card"><h3>Divisional team</h3><div class="list" id="dTeam"></div></div>
+      <div class="card"><h3>Outreach in this division</h3><div class="list" id="dActs"></div></div>
+    </div>
+    <div class="card"><h3>Units</h3><div class="tscroll"><table id="dUnits"></table></div></div>
+  </section>
+
+  <!-- UNITS -->
+  <section class="panel" id="tab-units" hidden>
+    <div class="sechead"><h2>College units</h2><div class="btnrow"><button class="btn small" type="button" id="btnExport" hidden>Export CSV</button><button class="btn primary" data-add="unit" type="button">Add unit</button></div></div>
+    <div class="filters">
+      <input id="uSearch" type="search" placeholder="Search college, district or unit rep">
+      <select id="uDiv" aria-label="Division"></select>
+      <select id="uDist" aria-label="District"></select>
+      <select id="uSup" aria-label="Support">
+        <option value="">All support levels</option>
+      </select>
+      <select id="uFlag" aria-label="Gaps">
+        <option value="">Any status</option>
+        <option value="norep">No unit rep yet</option>
+        <option value="never">Never contacted</option>
+        <option value="nostrength">Faculty strength not entered</option>
+      </select>
+    </div>
+    <div class="note" id="uCount"></div>
+    <div class="ucards" id="uCards"></div>
+    <div class="btnrow" style="justify-content:center"><button class="btn" id="uMore" type="button" hidden></button></div>
+  </section>
+
+  <!-- ACTIVITIES -->
+  <section class="panel" id="tab-activities" hidden>
+    <div class="sechead"><h2>Outreach log</h2><button class="btn primary" data-add="activity" type="button">Plan outreach</button></div>
+    <div class="filters">
+      <select id="aLevel" aria-label="Level"><option value="">All levels</option><option value="unit">Unit</option><option value="division">Division</option><option value="centre">Centre</option></select>
+      <select id="aDiv" aria-label="Division"></select>
+      <select id="aStatus" aria-label="Status"><option value="">Any status</option><option value="planned">Planned</option><option value="done">Done</option><option value="cancelled">Cancelled</option></select>
+    </div>
+    <div class="card"><h3>Coming up</h3><div class="list" id="aUp"></div></div>
+    <div class="card"><h3>Completed &amp; past</h3><div class="list" id="aPast"></div></div>
+  </section>
+
+  <!-- TEAM -->
+  <section class="panel" id="tab-team" hidden>
+    <div class="sechead"><h2>Campaign team</h2><button class="btn primary" data-add="member" type="button">Add member</button></div>
+    <div class="filters"><input id="tSearch" type="search" placeholder="Search name, college, district or task"><select id="tDiv" aria-label="Division"></select></div>
+    <div class="kpis" id="tKpis"></div>
+    <div class="card"><div class="sechead"><h3>Coordinator gaps</h3><span class="note">Every division, district and college needs a named person</span></div><div class="datacard" id="tGaps"></div></div>
+    <div class="card"><div class="sechead"><h3>Our candidates &amp; seats</h3><button class="btn small" data-rgo-tab="setup" type="button">Edit posts &amp; candidates</button></div><div id="tCands"></div></div>
+    <div class="grid2" id="teamGroups"></div>
+  </section>
+
+  <!-- RESULTS -->
+  <section class="panel" id="tab-results" hidden>
+    <div class="banner warn"><b>Unofficial.</b> A preliminary count built from polling agents' reports of each unit's raw figures. It is not the result declared by the Election Commission or Returning Officer.</div>
+    <div class="chips" id="rViews">
+      <button class="chip" data-rview="tally" aria-pressed="true" type="button">Tally</button>
+      <button class="chip" data-rview="enter" aria-pressed="false" type="button">Enter unit result</button>
+      <button class="chip" data-rview="setup" aria-pressed="false" type="button">Posts &amp; candidates</button>
+    </div>
+    <div class="panel" id="rTally"></div>
+    <div class="panel" id="rEnter" hidden></div>
+    <div class="panel" id="rSetup" hidden></div>
+  </section>
+
+  <!-- DATA -->
+  <section class="panel" id="tab-data" hidden>
+    <div class="sechead"><h2>Data &amp; sharing</h2></div>
+    <div class="banner" id="officeLine"></div>
+    <div class="note" id="dataSummary"></div>
+    <div class="grid2">
+      <div class="card datacard">
+        <h3>Save a backup</h3>
+        <p class="note">Everything you enter is kept in this browser on this device. Save a backup file regularly, and send it to coordinators on WhatsApp or email so they can load it.</p>
+        <div class="btnrow"><button class="btn primary" id="btnBackup" type="button">Save backup (.json)</button><button class="btn" id="btnSendBackup" type="button" hidden>Send backup on WhatsApp…</button><button class="btn" id="btnCsv" type="button">Units list (.csv)</button></div>
+      </div>
+      <div class="card datacard">
+        <h3>Load a backup</h3>
+        <p class="note"><b>Merge</b> adds a coordinator's entries to yours and keeps the newer copy of anything edited on both sides. <b>Replace</b> wipes this device and loads the file as it is.</p>
+        <input type="file" id="fileIn" accept=".json,application/json" multiple hidden>
+        <div class="btnrow"><button class="btn primary" id="btnMerge" type="button">Merge a file</button><button class="btn" id="btnReplace" type="button">Replace with a file</button></div>
+      </div>
+      <div class="card datacard">
+        <h3>App version &amp; updates</h3>
+        <p class="note" id="verLine"></p>
+        <p class="note">Updates reach phones over the internet until polling day. Entered data, photos and settings are never touched by an update.</p>
+        <div class="btnrow"><button class="btn primary" id="btnUpdate" type="button">Check for updates</button></div>
+      </div>
+      <div class="card datacard">
+        <h3>Punjab colleges directory</h3>
+        <p class="note">Adds the 861 public colleges of Punjab (CIS Punjab list, with EMIS codes, district and division). Only colleges missing from this device are added; your entries are never overwritten.</p>
+        <div class="btnrow"><button class="btn primary" id="btnDirectory" type="button">Load missing colleges</button></div>
+      </div>
+      <div class="card datacard">
+        <h3>Update units from a spreadsheet</h3>
+        <p class="note">In Excel, use <b>Save As › CSV</b>. Columns (any order, first row as headings): <b>emis_code, name, district, division, members, contacted, support, rep, phone, notes</b>. Colleges are matched by EMIS code, then by name. Blank cells leave the existing value alone. Tip: export the Units list first and edit that file.</p>
+        <input type="file" id="csvIn" accept=".csv,text/csv,text/plain" hidden>
+        <div class="btnrow"><button class="btn primary" id="btnCsvIn" type="button">Import a .csv file</button></div>
+      </div>
+      <div class="card datacard">
+        <h3>Install on your phone</h3>
+        <p class="note"><b>Android (Chrome):</b> tap <b>Install app</b> at the top, or open the ⋮ menu and choose <b>Install app</b> / <b>Add to Home screen</b>.</p>
+        <p class="note"><b>iPhone (Safari):</b> tap the Share button, then <b>Add to Home Screen</b>.</p>
+        <p class="note" id="installState"></p>
+      </div>
+      <div class="card datacard">
+        <h3>Clear this device</h3>
+        <p class="note">Removes every unit, outreach entry and team member stored in this browser. Save a backup first.</p>
+        <div class="btnrow"><button class="btn danger" id="btnWipe" type="button">Clear all data</button></div>
+      </div>
+    </div>
+  </section>
+</div></main>
+
+<div class="overlay" id="overlay" hidden><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" id="sheet"></div></div>
+<div class="toast" id="toast" hidden></div>
+<datalist id="distList"></datalist>
+
+<script>
+(function(){
+const DIVISIONS=["Bahawalpur","Dera Ghazi Khan","Faisalabad","Gujranwala","Gujrat","Lahore","Multan","Rawalpindi","Sahiwal","Sargodha"];
+const SUPPORT=[["strong","Strong support","c-strong"],["lean","Leaning our way","c-lean"],["undec","Undecided","c-undec"],["opp","Opposed","c-opp"]];
+const SUPMAP=Object.fromEntries(SUPPORT.map(s=>[s[0],s]));
+const ACT_TYPES=["College visit","Staff-room meeting","Phone / WhatsApp drive","Corner meeting","Divisional convention","Central rally / convention","Press & social media","Manifesto distribution","Polling-day duty"];
+const ROLES=["Central committee","Campaign coordinator","Divisional coordinator","District coordinator","Unit coordinator","Unit representative","Focal person","Polling agent","Volunteer"];
+const TEAM_LEVELS={centre:"Centre (Punjab)",division:"Division",district:"District",unit:"Unit (college)"};
+const ROLE_LEVEL={"Central committee":"centre","Campaign coordinator":"centre","Divisional coordinator":"division","District coordinator":"district","Unit coordinator":"unit","Unit representative":"unit","Polling agent":"unit"};
+const FOCUS=["Media & social media","Women colleges","Polling agents & polling day","Transport & logistics","Election rules & legal","Manifesto & literature","Candidates liaison","Finance","Retired & senior faculty"];
+const UNIT_ROLES=["Unit coordinator","Unit representative"];
+const LEVELS={unit:"Unit",division:"Division",centre:"Centre"};
+// Release numbers: scripts/release.py keeps these, the ppla-build meta tag, version.json and sw.js in step.
+const APP_VERSION="1.3", APP_BUILD=13;
+// Coalition this desk serves. The panel name in Settings overrides the display name.
+const COALITION="Nawa-e-Asatza & Ittehad-e-Asatza Punjab", SYMBOL="Torch (Mashal · مشعل)";
+const TORCH_SVG=`<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 3c7 9 13 14 13 23a13 13 0 0 1-26 0c0-7 4-10 7-15 1 4 3 6 5 7-1-6 0-10 1-15z" fill="var(--flame)"/><path d="M18 39h28l-3 6H21z" fill="var(--gold)"/><path d="M23 45h18l-6 17h-6z" fill="var(--handle)"/></svg>`;
+const panelName=()=>S.cfg.panel||COALITION;
+
+/* ---------- Punjab colleges directory (861 public colleges, CIS Punjab; rebuilt by scripts/build_seed.py) ---------- */
+/*SEED-START*/
+const SEED_DISTS=[["ATTOCK",7],["BAHAWALNAGAR",0],["BAHAWALPUR",0],["BHAKKAR",9],["CHAKWAL",7],["CHINIOT",2],["D.G.KHAN",1],["FAISALABAD",2],["GUJRANWALA",3],["GUJRAT",4],["HAFIZABAD",4],["JEHLUM",7],["JHANG",2],["KASUR",5],["KHANEWAL",6],["KHUSHAB",9],["LAHORE",5],["LAYYAH",1],["LODHRAN",6],["MANDI BAHUDDIN",4],["MIANWALI",9],["MULTAN",6],["MUZAFFARGARH",1],["NANKANA SAHIB",5],["NAROWAL",3],["OKARA",8],["PAKPATTAN",8],["RAHIMYAR KHAN",0],["RAJANPUR",1],["RAWALPINDI",7],["SAHIWAL",8],["SARGODHA",9],["SHEIKHUPURA",5],["SIALKOT",3],["T.T.SINGH",2],["VEHARI",6]];
+const SEED_COLLEGES="311101|GOVT. GRADUATE COLLEGE, BAHAWALNAGAR|1|C|G\n311102|GOVT. GRADUATE COLLEGE (W), BAHAWALNAGAR|1|F|G\n311103|GOVT. ASSOCIATE COLLEGE OF COMMERCE (W), BAHAWALNAGAR|1|F|C\n311104|GOVT. GRADUATE COLLEGE OF COMMERCE, BAHAWALNAGAR|1|C|G\n311105|GOVT. ASSOCIATE COLLEGE, MARROT, FORT ABBAS, BAHAWALNAGAR|1|C|A\n311201|GOVT. GRADUATE COLLEGE, CHISHTIAN, BAHAWALNAGAR|1|C|G\n311202|GOVT. ASSOCIATE COLLEGE, DAHRAN WALA, BAHAWALNAGAR|1|C|A\n311203|GOVT. GRADUATE COLLEGE (W), CHISHTIAN, BAHAWALNAGAR|1|F|G\n311204|GOVT. ASSOCIATE COLLEGE (W), DAHARANWALA, BAHAWALNAGAR|1|F|A\n311205|GOVT. ASSOCIATE COLLEGE OF COMMERCE, CHISHTIAN, BAHAWALNAGAR|1|C|C\n311206|GOVT. ASSOCIATE COLLEGE (W), 112 MURAD, CHISTIAN, BAHAWALNAGAR|1|F|A\n311301|GOVT. GRADUATE COLLEGE, FORT ABBAS, BAHAWALNAGAR|1|C|G\n311302|GOVT. GRADUATE COLLEGE (W), FORT ABBAS, BAHAWALNAGAR|1|F|G\n311303|GOVT. ASSOCIATE COLLEGE OF COMMERCE, FORT ABBAS, BAHAWALNAGAR|1|C|C\n311401|GOVT. RAZVIA ISLAMIA GRADUATE COLLEGE, HAROONABAD, BAHAWALNAGAR|1|C|G\n311402|GOVT. GRADUATE COLLEGE (W), HAROONABAD, BAHAWALNAGAR|1|F|G\n311403|GOVT. ASSOCIATE COLLEGE OF COMMERCE, HAROONABAD, BAHAWALNAGAR|1|C|C\n311404|GOVT. ASSOCIATE COLLEGE (W), LATIFABAD, HAROONABAD, BAHAWALNAGAR|1|F|A\n311405|GOVT. ASSOCIATE COLLEGE, LATIFABAD, BAHAWALNAGAR|1|C|A\n311501|GOVT. ASSOCIATE COLLEGE, MINCHINABAD, BAHAWALNAGAR|1|C|A\n311502|GOVT. ASSOCIATE COLLEGE (W), MINCHINABAD, BAHAWALNAGAR|1|F|A\n311503|GOVT. ASSOCIATE COLLEGE OF COMMERCE, TAJ TOWN MINCHINABAD, BAHAWALNAGAR|1|C|C\n312101|GOVT. SADIQ ABBAS GRADUATE COLLEGE, DERA NAWAB SAHIB, BAHAWALPUR|2|C|G\n312102|GOVT. MAKHDOOM SHAMS UL DIN GILLANI ASSOCIATE COLLEGE, UCH SHARIF, BAHAWALPUR|2|C|A\n312103|GOVT. SYEDA TALLAT ZAHRA GILLANI ASSOCIATE COLLEGE (W), UCH SHARIF, BAHAWALPUR|2|F|A\n312104|GOVT. GRADUATE COLLEGE (W), AHMADPUR EAST, BAHAWALPUR|2|F|G\n312105|GOVT. ASSOCIATE COLLEGE OF COMMERCE, AHMEDPUR EAST, BAHAWALPUR|2|C|C\n312106|GOVT. ASSOCIATE COLLEGE (W), HATHEJI, BAHAWALPUR|2|F|A\n312201|GOVT. SADIQ EGERTON GRADUATE COLLEGE, BAHAWALPUR|2|C|G\n312202|GOVT. GRADUATE COLLEGE, BAGHDAD ROAD, BAHAWALPUR|2|C|G\n312203|GOVT. GRADUATE COLLEGE, (W), SATELLITE TOWN, BAHAWALPUR|2|F|G\n312204|GOVT. GRADUATE COLLEGE (W), DUBAI MAHAL ROAD, BAHAWALPUR|2|F|G\n312206|GOVT. SADIQ GRADUATE COLLEGE OF COMMERCE, BAHAWALPUR|2|C|G\n312207|GOVT. ASSOCIATE COLLEGE (W), KUD WALA, YAZMAN, BAHAWALPUR|2|F|A\n312210|GOVT. ASSOCIATE COLLEGE, SAMA SATTA, BAHAWALPUR|2|C|A\n312210_1|Govt. Associate College Sama Satta|2|C|A\n312211|GOVT. ASSOCIATE COLLEGE (W), BANGLA TAILWALA, BAHAWALPUR|2|F|A\n312212|GOVT. GRADUATE COLLEGE (W), SAMA SATTA, BAHAWALPUR|2|F|G\n312301|GOVT. GRADUATE COLLEGE, HASILPUR, BAHAWALPUR|2|C|G\n312302|GOVT. GRADUATE COLLEGE (W), HASILPUR, BAHAWALPUR|2|F|G\n312303|GOVT. ASSOCIATE COLLEGE OF COMMERCE, HASILPUR, BAHAWALPUR|2|C|C\n312304|GOVT. ASSOCIATE COLLEGE, (W), CHOONAWALA, HASILPUR, BAHAWALPUR|2|F|A\n312401|GOVT. ASSOCIATE COLLEGE, YAZMAN, BAHAWALPUR|2|C|A\n312402|GOVT. GRADUATE COLLEGE (W), YAZMAN, BAHAWALPUR|2|F|G\n312403|GOVT. ASSOCIATE COLLEGE OF COMMERCE, YAZMAN, BAHAWALPUR|2|C|C\n312501|GOVT. GRADUATE COLLEGE, KHAIRPUR TAMEWALI, BAHAWALPUR|2|C|G\n312502|GOVT. GRADUATE COLLEGE (W), KHAIRPUR TAMEWALI, BAHAWALPUR|2|F|G\n312503|GOVT. ASSOCIATE COLLEGE OF HOME ECONOMICS(W), BAHAWALPUR|2|F|A\n313101|GOVT. GRADUATE COLLEGE, KHANPUR, RAHIM YAR KHAN|27|C|G\n313102|GOVT. GRADUATE COLLEGE (W), KHANPUR, RAHIM YAR KHAN|27|F|G\n313103|GOVT. ASSOCIATE COLLEGE OF COMMERCE, KHANPUR, RAHIM YAR KHAN|27|C|C\n313104|GOVT. ASSOCIATE COLLEGE, KHANPUR ROAD, SAHJA, RAHIM YAR KHAN|27|C|A\n313105|GOVT. ASSOCIATE COLLEGE, TRANDA SAWAY KHAN, RAHIM YAR KHAN|27|C|A\n313201|GOVT ASSOCIATE COLLEGE, ALLAMA IQBAL TOWN, LIAQUATPUR, RAHIM YAR KHAN|27|C|A\n313202|GOVT. GRADUATE COLLEGE (W), LIAQUATPUR, RAHIM YAR KHAN|27|F|G\n313203|GOVT. ASSOCIATE COLLEGE OF COMMERCE, LIAQUATPUR, RAHIM YAR KHAN|27|C|C\n313204|GOVT. ASSOCIATE COLLEGE (W), TARINDAH MUHAMMAD PANNAH, LIAQUATPUR, RAHIM YAR KHAN|27|F|A\n313205|GOVT. ASSOCIATE COLLEGE, TRANDA MUHAMMAD PANAH, TEHSIL LIAQAT PUR, RAHIM YAR KHAN|27|C|A\n313301|GOVT. KHAWAJA FARID GRADUATE COLLEGE, RAHIM YAR KHAN|27|C|G\n313302|GOVT. GRADUATE COLLEGE (W), RAHIM YAR KHAN|27|F|G\n313304|GOVT. ASSOCIATE COLLEGE (W), KHAN BELA, LIAQUATPUR, RAHIM YAR KHAN|27|F|A\n313305|GOVT. FATIMA JINNAH ASSOCIATE COLLEGE (W), 103/I L KHANPUR, RAHIM YAR KHAN|27|F|A\n313306|GOVT. ASSOCIATE COLLEGE (W), SAKKAR ADDA, RAHIM YAR KHAN|27|F|A\n313307|GOVT. GRADUATE COLLEGE OF COMMERCE, SHAHBAZPUR ROAD, RAHIM YAR KHAN|27|C|G\n313308|GOVT. ASSOCIATE COLLEGE OF COMMERCE (W), EID GAH ROAD, RAHIM YAR KHAN|27|F|C\n313310|GOVT. ASSOCIATE COLLEGE (W), MANTHAR, RAHIM YAR KHAN|27|F|A\n313311|GOVT. ASSOCIATE COLLEGE (W), ZAHIR PEER, RAHIM YAR KHAN|27|F|A\n313312|GOVT. ASSOCIATE COLLEGE (W), MIANWALI QURESHIAN, RAHIM YAR KHAN|27|F|A\n313313|GOVT. ASSOCIATE COLLEGE (W), KOT SAMABA, RAHIM YAR KHAN|27|F|A\n313315|GOVT. ASSOCIATE COLLEGE, ABBASIAN, RAHIM YAR KHAN|27|C|A\n313316|GOVT. ASSOCIATE COLLEGE, MANTHAR, RAHIM YAR KHAN|27|C|A\n313401|GOVT. GRADUATE COLLEGE, JDW ROAD, SADIQABAD, RAHIM YAR KHAN|27|C|G\n313402|GOVT. ASSOCIATE COLLEGE (W), SADIQABAD, RAHIM YAR KHAN|27|F|A\n313403|GOVT. ASSOCIATE COLLEGE OF COMMERCE, MANTHAR ROAD, SADIQABAD, RAHIM YAR KHAN|27|C|C\n321101|GOVT. ASSOCIATE COLLEGE (W), CHOTI ZAREEN, DERA GHAZI KHAN|6|F|A\n321103|GOVT. GRADUATE COLLEGE, BLOCK 17, DERA GHAZI KHAN|6|C|G\n321104|GOVT. GRADUATE COLLEGE (W), DERA GHAZI KHAN|6|F|G\n321106|GOVT. GRADUATE COLLEGE (W), MODEL TOWN, DERA GHAZI KHAN|6|F|G\n321107|GOVT. ASSOCIATE COLLEGE, CHOTI ZAREEN, DERA GHAZI KHAN|6|C|A\n321108|GOVT. GRADUATE COLLEGE (W), KOT CHUTTA, DERA GHAZI KHAN|6|F|G\n321110|GOVT. GRADUATE COLLEGE, SHAH SADAR DEEN, DERA GHAZI KHAN|6|C|G\n321111|GOVT. GRADUATE COLLEGE OF COMMERCE, DERA GHAZI KHAN|6|C|G\n321112|GOVT. ASSOCIATE COLLEGE OF COMMERCE (W), DERA GHAZI KHAN|6|F|C\n321114|GOVT. GRADUATE COLLEGE (W), CITY, DERA GHAZI KHAN|6|F|G\n321115|GOVT. GRADUATE COLLEGE, DERA GHAZI KHAN|6|C|G\n321116|GOVT. ASSOCIATE COLLEGE, SHAHDAN LUND, DERA GHAZI KHAN|6|C|A\n321201|GOVT. GRADUATE COLLEGE (W), TAUNSA, DERA GHAZI KHAN|6|F|G\n321202|GOVT. GRADUATE COLLEGE, TAUNSA, DERA GHAZI KHAN|6|C|G\n321203|GOVT. GRADUATE COLLEGE, VOHOVA, DERA GHAZI KHAN|6|C|G\n321204|GOVT. ASSOCIATE COLLEGE (W), KOT QAISRANI, DERA GHAZI KHAN|6|F|A\n321205|GOVT. ASSOCIATE COLLEGE OF COMMERCE, TAUNSA SHARIF, DERA GHAZI KHAN|6|C|C\n321206|GOVT. ASSOCIATE COLLEGE (W), VEHOVA, DERA GHAZI KHAN|6|F|A\n322101|GOVT. ASSOCIATE COLLEGE, CHOUBARA, LAYYAH|17|C|A\n322102|GOVT. ASSOCIATE COLLEGE OF COMMERCE, CHOUBARA, LAYYAH|17|C|C\n322103|GOVT. ASSOCIATE COLLEGE (W), CHOUBARA, LAYYAH|17|F|A\n322201|GOVT. GRADUATE COLLEGE, KAROR LAL ESAN, LAYYAH|17|C|G\n322202|GOVT. GRADUATE COLLEGE, FATEHPUR, LAYYAH|17|C|G\n322203|GOVT. ASSOCIATE COLLEGE (W), KAROR, LAYYAH|17|F|A\n322204|GOVT. ASSOCIATE COLLEGE (W), FATEHPUR, LAYYAH|17|F|A\n322205|GOVT. ASSOCIATE COLLEGE OF COMMERCE, KAROR, LAYYAH|17|C|C\n322206|GOVT. ASSOCIATE COLLEGE (W), RAJAN SHAH KAROR LAL ESAN, LAYYAH|17|F|A\n322301|GOVT. GRADUATE COLLEGE, LAYYAH|17|C|G\n322302|GOVT. GRADUATE COLLEGE, KOT SULTAN, LAYYAH|17|C|G\n322303|GOVT. GRADUATE COLLEGE, CHOWK AZAM, LAYYAH|17|C|G\n322304|GOVT. GRADUATE COLLEGE (W), LAYYAH|17|F|G\n322305|GOVT. GRADUATE COLLEGE (W), KOT SULTAN, LAYYAH|17|F|G\n322306|GOVT. GRADUATE COLLEGE (W), CHOWK AZAM, LAYYAH|17|F|G\n322307|GOVT. ASSOCIATE COLLEGE (W), MIRHAN, LAYYAH|17|F|A\n322308|GOVT. ASSOCIATE COLLEGE (W), 90 ML, KAROR, LAYYAH|17|F|A\n322309|GOVT. GRADUATE COLLEGE OF COMMERCE, LAYYAH|17|C|G\n322310|GOVT. ASSOCIATE COLLEGE OF COMMERCE, KOTSULTAN, LAYYAH|17|C|C\n322311|GOVT. ASSOCIATE COLLEGE OF COMMERCE (W), LAYYAH|17|F|C\n322312|GOVT. ASSOCIATE COLLEGE (W), PEER JAGGI, LAYYAH|17|F|A\n322314|GOVT. ASSOCIATE COLLEGE, AMEER-UD-DIN WALA, LAYYAH|17|C|A\n323101|GOVT. GRADUATE COLLEGE, ALIPUR, MUZAFFARGARH|22|C|G\n323102|GOVT. GRADUATE COLLEGE (W), ALIPUR, MUZAFFARGARH|22|F|G\n323103|GOVT. ASSOCIATE COLLEGE OF COMMERCE, ALIPUR, MUZAFFARGARH|22|C|C\n323201|GOVT. GRADUATE COLLEGE, KOT ADU, MUZAFFARGARH|22|C|G\n323202|GOVT. GRADUATE COLLEGE (W), KOT ADU, MUZAFFARGARH|22|F|G\n323203|GOVT. ASSOCIATE COLLEGE OF COMMERCE, KOT ADU, MUZAFFARGARH|22|C|C\n323204|GOVT. ASSOCIATE COLLEGE (W), DAIRA DIN PANAH, MUZAFFARGARH|22|F|A\n323205|GOVT. ASSOCIATE COLLEGE, SINAWAN, MUZAFFARGARH|22|C|A\n323206|GOVT. ASSOCIATE COLLEGE (W), ADDA GUJRAT, KOT ADU, MUZAFFARGARH|22|F|A\n323207|GOVT. ASSOCIATE COLLEGE (W), LEGHARI CHOWK BYPASS, KOT ADDU, MUZAFFARGARH|22|F|A\n323301|GOVT. GRADUATE COLLEGE, MUZAFFARGARH|22|C|G\n323302|GOVT. ASSOCIATE COLLEGE, RANGPUR, MUZAFFARGARH|22|C|A\n323303|GOVT. GRADUATE COLLEGE (W), MUZAFFARGARH|22|F|G\n323304|GOVT. GRADUATE COLLEGE (W), KARAM DAD QURESHI, MUZAFFARGARH|22|F|G\n323305|GOVT. ASSOCIATE COLLEGE (W), KHAN GARH, MUZAFFARGARH|22|F|A\n323306|GOVT. ASSOCIATE COLLEGE OF COMMERCE, MUZAFFARGARH|22|C|C\n323307|GOVT. GRADUATE COLLEGE (W), CHOWK SARWAR SHAHEED MUZAFFARGARH|22|F|G\n323308|GOVT. GRADUATE COLLEGE, CHOWK SARWAR SHAHEED, MUZAFFARGARH|22|C|G\n323310|GOVT. ASSOCIATE COLLEGE (W), SANAWAAN, MUZAFFARGARH|22|F|A\n323311|GOVT. ASSOCIATE COLLEGE (W), RANGPUR, MUZAFFARGARH|22|F|A\n323312|GOVT.ASSOCIATE COLLEGE, KHAN GARH, MUZAFFARGARH|22|C|A\n323313|GOVT. ASSOCIATE COLLEGE (W), SHAH JAMAL, MUZAFFARGARH|22|F|A\n323401|GOVT. KAURA KHAN gRADUATE COLLEGE, JATOI, MUZAFFAR GARH, MUZAFFARGARH|22|C|G\n323402|GOVT. ASSOCIATE COLLEGE (W), SHEHER SULTAN G.T ROAD, MUZAFFARGARH|22|F|A\n323403|GOVT. KAURA KHAN GRADUATE COLLEGE (W), JATOI, MUZAFFARGARH|22|F|G\n324101|GOVT. GRADUATE COLLEGE, RAJANPUR|28|C|G\n324102|GOVT. GRADUATE COLLEGE, JAMPUR, RAJANPUR|28|C|G\n324103|GOVT. GRADUATE COLLEGE (W), JAMPUR, RAJANPUR|28|F|G\n324104|GOVT. ASSOCIATE COLLEGE OF COMMERCE, JAMPUR, RAJANPUR|28|C|C\n324201|GOVT. GRADUATE COLLEGE (W), RAJANPUR|28|F|G\n324202|GOVT. GRADUATE COLLEGE, FAZILPUR, RAJANPUR|28|C|G\n324203|GOVT. GRADUATE COLLEGE (W), FAZILPUR, RAJANPUR|28|F|G\n324204|GOVT. ASSOCIATE COLLEGE OF COMMERCE, RAJANPUR|28|C|C\n324206|GOVT. ASSOCIATE COLLEGE (W), KOT MITHAN, RIC, RAJANPUR|28|F|A\n324207|GOVT. ASSOCIATE COLLEGE (W), DAJAL, RAJANPUR|28|F|A\n324208|GOVT. GRADUATE COLLEGE, KOT MITHAN, RAJANPUR|28|C|G\n324301|GOVT. ASSOCIATE COLLEGE, ROJHAN, RAJANPUR|28|C|A\n324302|GOVT. ASSOCIATE COLLEGE OF COMMERCE, ROJHAN, RAJANPUR|28|C|C\n324303|GOVT. ASSOCIATE COLLEGE, UMAR KOT, RAJANPUR|28|C|A\n324304|GOVT. ASSOCIATE COLLEGE (W), MUHAMMAD PUR, RAJANPUR|28|F|A\n331101|GOVT. GRADUATE COLLEGE OF SCIENCE, FAISALABAD|7|C|G\n331102|GOVT. GRADUATE COLLEGE, SAMANABAD, FAISALABAD|7|C|G\n331103|GOVT. MUNICIPAL GRADUATE COLLEGE, JARANWALA ROAD, FAISALABAD|7|C|G\n331104|GOVT. GRADUATE COLLEGE, ABDULLAHPUR, FAISALABAD|7|C|G\n331105|GOVT. ISLAMIA GRADUATE COLLEGE, SARGODHA ROAD FAISALABAD|7|C|G\n331106|GOVT. GRADUATE COLLEGE, SATIANA ROAD, PEOPLES COLONY NO. 2, FAISALABAD|7|C|G\n331107|GOVT. MILLAT GRADUATE COLLEGE, GHULAM MUHAMMADABAD, FAISALABAD|7|C|G\n331108|GOVT. GRADUATE COLLEGE (W), KARKHANA BAZAR, FAISALABAD|7|F|G\n331109|GOVT. ISLAMIA GRADUATE COLLEGE (W), EIDGAH ROAD, FAISALABAD|7|F|G\n331110|GOVT. GRADUATE COLLEGE (W), GULISTAN COLONY, FAISALABAD|7|F|G\n331111|GOVT. GRADUATE COLLEGE (W), PEOPLES COLONY NO. 2, FAISALABAD|7|F|G\n331112|GOVT. GRADUATE COLLEGE (W), D TYPE COLONY, FAISALABAD|7|F|G\n331113|GOVT. GRADUATE COLLEGE (W), G.M.ABAD, FAISALABAD|7|F|G\n331114|GOVT. GRADUATE COLLEGE (W), SAIFABAD, JHANG ROAD, FAISALABAD|7|F|G\n331115|GOVT. GRADUATE COLLEGE (W), DIJKOT, FAISALABAD|7|F|G\n331116|GOVT. GRADUATE COLLEGE (W), GULSHAN COLONY, FAISALABAD|7|F|G\n331118|GOVT. GRADUATE COLLEGE, 266/RB, KHURRIANWALA, FAISALABAD|7|C|G\n331119|GOVT. GRADUATE COLLEGE (W), 266/RB, KHURRIANWALA, FAISALABAD|7|F|G\n331120|GOVT. GRADUATE COLLEGE (W), SAMANABAD, FAISALABAD|7|F|G\n331121|GOVT. GRADUATE COLLEGE, CHAK NO. 122/JB SARGODHA ROAD, FAISALABAD|7|C|G\n331122|GOVT. ASSOCIATE COLLEGE OF COMMERCE, JHANG ROAD, FAISALABAD|7|C|C\n331123|GOVT. GRADUATE COLLEGE OF COMMERCE, PEOPLES COLONY NO. 1, FAISALABAD|7|C|G\n331124|GOVT. ASSOCIATE COLLEGE (W), AYUB RESEARCH INSTITUTE, FAISALABAD|7|F|A\n331128|GOVT. GRADUATE COLLEGE OF HOME ECONOMICS (W), FAISALABAD|7|F|G\n331201|GOVT. GRADUATE COLLEGE, JARANWALA, FAISALABAD|7|C|G\n331202|GOVT. GRADUATE COLLEGE (W), JARANWALA, FAISALABAD|7|F|G\n331203|GOVT. ASSOCIATE COLLEGE OF COMMERCE, SATIANA ROAD, JARANWALA, FAISALABAD|7|C|C\n331204|GOVT. ASSOCIATE COLLEGE (W), CHAK NO. 591/GB, GANGAPUR, JARANWALA, FAISALABAD|7|F|A\n331205|GOVT. GRADUATE COLLEGE (W), SATIANA BANGLOW, JARANWALA, FAISALABAD|7|F|G\n331206|GOVT. RAI ARIF HUSSAIN KHARAL ASSOCIATE COLLEGE (W), 374/GB ARRKANA, JARANWALA, FAISALABAD|7|F|A\n331207|GOVT.GRADUATE COLLEGE (w)97/RB JOHAL ADDA, SHEIKHUPURA RD, FAISALABAD|7|F|G\n331301|GOVT. GRADUATE COLLEGE, SAMUNDARI, FAISALABAD|7|C|G\n331302|GOVT. ASSOCIATE COLLEGE (W), MURIDWALA, SAMUNDARI, FAISALABAD|7|F|A\n331303|GOVT. GRADUATE COLLEGE (W), SAMUNDARI, FAISALABAD|7|F|G\n331304|GOVT. ASSOCIATE COLLEGE OF COMMERCE, SAMUNDARI, FAISALABAD|7|C|C\n331305|GOVT. ASSOCIATE COLLEGE (W), CHAK NO. 46/GB, TEHSIL SAMUNDRI, FAISALABAD.|7|F|A\n331401|GOVT. MUSLIM ASSOCIATE COLLEGE, 41/JB, FAISALABAD|7|C|A\n331402|GOVT. GRADUATE COLLEGE (W), 61/JB, NARWALA BANGLOW, FAISALABAD|7|F|G\n331403|GOVT. ASSOCIATE COLLEGE (W), 117/JB, MILLAT ROAD, FAISALABAD|7|F|A\n331404|GOVT. GRADUATE COLLEGE (W), 215/RB, JARANWALA ROAD, FAISALABAD|7|F|G\n331405|GOVT. GRADUATE COLLEGE PAINSRA FAISALABAD|7|C|G\n331406|GOVT. ASSOCIATE COLLEGE (W), MIRANWALA BANGLOW BORAYWALA ROAD, FAISALABAD|7|F|A\n331501|GOVT. GRADUATE COLLEGE (W), 153 R.B, SAHIANWALA, FAISALABAD|7|F|G\n331502|GOVT. GRADUATE COLLEGE (W), CHAK JHUMRA, FAISALABAD|7|F|G\n331503|GOVT. GRADUATE COLLEGE, SALARWALA, FAISALABAD|7|C|G\n331504|GOVT. GRADUATECOLLEGE, CHAK JHUMRA, FAISALABAD|7|C|G\n331601|GOVT. GRADUATE COLLEGE, TANDLIANWALA, FAISALABAD|7|C|G\n331602|GOVT. ASSOCIATE COLLEGE (W), TANDLIANWALA, FAISALABAD|7|F|A\n331603|GOVT. ASSOCIATE COLLEGE (W), MAMUN KANJAN, FAISALABAD|7|F|A\n331604|GOVT. GRADUATE COLLEGE, MAMUKANJAN, TEHSIL SAMUNDARI, FAISALABAD|7|C|G\n331605|GOVT. ASSOCIATE COLLEGE OF COMMERCE (W), PEOPLES COLONY NO. 1, FAISALABAD|7|F|C\n332201|GOVT. GRADUATE COLLEGE, ADHIWAL CHOWK, JHANG|12|C|G\n332202|GOVT. ASSOCIATE COLLEGE, 170/JB, JHANG|12|C|A\n332203|GOVT. GRADUATE COLLEGE, GOJRA ROAD, JHANG|12|C|G\n332204|GOVT. GRADUATE COLLEGE (W), SADDAR, JHANG|12|F|G\n332205|GOVT. GRADUATE COLLEGE, 18 HAZARI, JHANG|12|C|G\n332206|GOVT. ASSOCIATE COLLEGE (W), MANDI SHAH JEWANA, JHANG|12|F|A\n332207|GOVT. GRADUATE COLLEGE (W), JHANG CITY, JHANG|12|F|G\n332208|GOVT. GRADUATE COLLEGE OF COMMERCE, SATTELITE TOWN, JHANG|12|C|G\n332209|GOVT. ASSOCIATE COLLEGE OF COMMERCE (W), JHANG|12|F|C\n332210|GOVT. ASSOCIATE COLLEGE, MANDI SHAH JEWANA, JHANG|12|C|A\n332211|GOVT. GRADUATE COLLEGE, GARH MAHARAJA AHMEDPUR SIAL, JHANG|12|C|G\n332213|GOVT. GRADUATE COLLEGE (W), AHMADPUR SIAL, JHANG|12|F|G\n332214|GOVT. GRADUATE COLLEGE (W), SATELLITE TOWN, JHANG|12|F|G\n332215|GOVT. GRADUATE COLLEGE (W), KHEWA, JHANG|12|F|G\n332216|GOVT. ASSOCIATE COLLEGE (W), RATTA MATTA JHANG|12|F|A\n332301|GOVT. GRADUATE COLLEGE, SHORKOT, JHANG|12|C|G\n332302|GOVT. GRADUATE COLLEGE (W), SHORKOT, JHANG|12|F|G\n332303|GOVT. ASSOCIATE COLLEGE OF COMMERCE, SHORKOT, JHANG|12|C|C\n332304|GOVT. ASSOCIATE COLLEGE (W), WARYAMWALA, JHANG|12|F|A\n332305|GOVT. GRADUATE COLLEGE (W), SHORKOT CANTT, JHANG|12|F|G\n332401|GOVT. ASSOCIATE COLLEGE (W), 18-HAZARI JHANG|12|F|A\n333101|GOVT. GRADUATE COLLEGE, GOJRA, TOBA TEK SINGH|34|C|G\n333102|GOVT. GRADUATE COLLEGE (W), GOJRA, TOBA TEK SINGH|34|F|G\n333103|GOVT. ASSOCIATE COLLEGE OF COMMERCE, GOJRA, TOBA TEK SINGH|34|C|C\n333201|GOVT. GRADUATE COLLEGE, KAMALIA, TOBA TEK SINGH|34|C|G\n333202|GOVT. GRADUATE COLLEGE  (W), KAMALIA, TOBA TEK SINGH|34|F|G\n333203|GOVT. GRADUATE COLLEGE  (W),  PIRMAHAL, TOBA TEK SINGH|34|F|G\n333204|GOVT.GRADUATE COLLEGE OF COMMERCE, KAMALIA, TOBA TEK SINGH|34|C|G\n333205|GOVT. ASSOCIATE COLLEGE (W), 721/GB, KAMALIA, TOBA TEK SINGH|34|F|A\n333206|GOVT. ASSOCIATE COLLEGE (W), JAKHAR KAMALIA, TOBA TEK SINGH|34|F|A\n333301|GOVT. ASSOCIATE COLLEGE, MAURUSIPUR, TOBA TEK SINGH|34|C|A\n333302|GOVT. F B GHOUSIA GRADUATE SCIENCE COLLEGE, 333/G.B, TOBA TEK SINGH|34|C|G\n333303|GOVT. GRADUATE COLLEGE, TOBA TEK SINGH|34|C|G\n333304|GOVT. GRADUATE COLLEGE (W), TOBA TEK SINGH|34|F|G\n333305|GOVT. ASSOCIATE COLLEGE, RAJANA, TOBA TEK SINGH|34|C|A\n333306|GOVT. ASSOCIATE COLLEGE (W), RAJANA, TOBA TEK SINGH|34|F|A\n333307|GOVT. GRADUATE COLLEGE OF COMMERCE, TOBA TEK SINGH|34|C|G\n333401|GOVT. ASSOCIATE COLLEGE  (W), SANDHILIANWALI, TOBA TEK SINGH|34|F|A\n334101|GOVT. ISLAMIA GRADUATE COLLEGE, CHINIOT|5|C|G\n334102|GOVT. GRADUATE TALIM-UL-ISLAM COLLEGE, CHENAB NAGAR, CHINIOT|5|C|G\n334104|GOVT. GRADUATE COLLEGE (W), CHINIOT|5|F|G\n334105|GOVT. JAMIA NUSRAT ASSOCIATE COLLEGE (W), CHENAB NAGAR, CHINIOT|5|F|A\n334107|GOVT. ASSOCIATE COLLEGE OF COMMERCE, CHINIOT|5|C|C\n334201|GOVT. ASSOCIATE COLLEGE (W), LALIAN, CHINIOT|5|F|A\n334202|GOVT. ASSOCIATE COLLEGE, LALIAN, CHINIOT|5|C|A\n334203|GOVT. ASSOCIATE COLLEGE (W), PIR PANJAH, LALIAN, CHINIOT|5|F|A\n334301|GOVT. GRADUATE COLLEGE, JAMIA MUHAMMADI SHARIF, BHOWANA CHINIOT|5|C|G\n334302|GOVT. ASSOCIATE COLLEGE (W), BHOWANA, CHINIOT|5|F|A\n334303|GOVT. MOULANA MUHAMMAD ZAKIR ASSOCIATE COLLEGE, AMINPUR BANGLOW, CHINIOT|5|C|A\n341101|GOVT. GRADUATE COLLEGE, SATELLITE TOWN, GUJRANWALA|8|C|G\n341102|GOVT. GRADUATE COLLEGE, QILA DIDAR SINGH, GUJRANWALA|8|C|G\n341103|GOVT. GRADUATE ISLAMIA COLLEGE, GUJRANWALA|8|C|G\n341104|GOVT. FAQIR MUHAMMAD FAQIR GRADUATE COLLEGE, PEOPLES COLONY, GUJRANWALA|8|C|G\n341105|GOVT. GRADUATE COLLEGE (W), SATELLITE TOWN, GUJRANWALA|8|F|G\n341106|GOVT. GRADUATE COLLEGE (W), MODEL TOWN, GUJRANWALA|8|F|G\n341107|GOVT. GRADUATE COLLEGE (W), GUJRANWALA|8|F|G\n341108|GOVT. GRADUATE COLLEGE (W), PEOPLES COLONY, GUJRANWALA|8|F|G\n341109|GOVT. GRADUATE COLLEGE (W), QILA DIDAR SINGH, GUJRANWALA|8|F|G\n341110|GOVT. GRADUATE COLLEGE (W), RAHWALI, GUJRANWALA|8|F|G\n341111|GOVT. MIAN REHMAT ALI GRADUATE COLLEGE OF HOME ECONOMICS (W), GUJRANWALA|8|F|G\n341112|GOVT. ASSOCIATE COLLEGE (W), COLLEGE, ROAD, GUJRANWALA|8|F|A\n341113|GOVT. GRADUATE COLLEGE (W), EMANABAD, GUJRANWALA|8|F|G\n341114|GOVT. GRADUATE COLLEGE OF COMMERCE, PEOPLES COLONY, GUJRANWALA|8|C|G\n341115|GOVT. ASSOCIATE COLLEGE OF COMMERCE, N. ROAD, GUJRANWALA|8|C|C\n341116|GOVT. ASSOCIATE COLLEGE OF COMMERCE (W), GUJRANWALA|8|F|C\n341119|GOVT. GRADUATE COLLEGE, GAKHAR MANDI, GUJRANWALA|8|C|G\n341120|GOVT. ASSOCIATE COLLEGE, EMINABAD, GUJRANWALA|8|C|A\n341121|GOVT. ASSOCIATE COLLEGE (W), SAGHIR SHAHEED PARK, NOWSHERA ROAD, GUJRANWALA|8|F|A\n341122|GOVT. GRADUATE COLLEGE (W), GAKHAR MANDI, GUJRANWALA|8|F|G\n341124|GOVT. GRADUATE COLLEGE, RAHWALI, GUJRANWALA|8|C|G\n341125|GOVT. ASSOCIATE COLLEGE (W), NAUKHAR, GUJRANWALA|8|F|A\n341126|GOVT. GRADUATE COLLEGE (W), TARIQABAD KHOKHARKI, GUJRANWALA|8|F|G\n341127|GOVT. GRADUATE COLLEGE (W), LADHWALA WARRAICH, GUJRANWALA|8|F|G\n341128|GOVT. GRADUATE COLLEGE, AROOP, GUJRANWALA|8|C|G\n341129|GOVT. ASSOCIATE COLLEGE, UDOWALI, GUJRANWALA|8|C|A\n341201|GOVT. MAULANA ZAFAR ALI KHAN GRADUATE COLLEGE, WAZIRABAD, GUJRANWALA|8|C|G\n341202|GOVT. GRADUATE COLLEGE (W), G.T. ROAD WAZIRABAD, GUJRANWALA|8|F|G\n341203|GOVT. GRADUATE COLLEGE (W), ALI PUR CHATHA, GUJRANWALA|8|F|G\n341204|GOVT. CH.ILM DIN GRADUATE COLLEGE, ALIPUR CHATHA, GUJRANWALA|8|C|G\n341205|GOVT. ASSOCIATE COLLEGE OF COMMERCE, WAZIRABAD, GUJRANWALA|8|C|C\n341206|GOVT. ASSOCIATE COLLEGE (W), WAZIRABAD CITY, GUJRANWALA|8|F|A\n341207|GOVT. ASSOCIATE COLLEGE (W), SOHDRA TOWN, WAZIRABAD, GUJRANWALA|8|F|A\n341208|GOVT. JUSTICE RTD DELAWAR CHEEMA GRADUATE COLLEGE (W), WAZIRABAD, GUJRANWALA|8|F|G\n341301|GOVT. ASSOCIATE COLLEGE, KAMOKE, GUJRANWALA|8|C|A\n341302|GOVT. GRADUATE COLLEGE (W), KAMOKE, GUJRANWALA|8|F|G\n341303|GOVT. GRADUATE COLLEGE (W), WAHNDO, GUJRANWALA|8|F|G\n341304|GOVT. GRADUATE COLLEGE OF COMMERCE, KAMOKE, GUJRANWALA|8|C|G\n341401|GOVT. GRADUATE COLLEGE (W), NOWSHERA VIRKAN, GUJRANWALA|8|F|G\n341402|GOVT. GRADUATE COLLEGE OF COMMERCE, NOSHERA VIRKAN GUJRANWALA|8|C|G\n341403|GOVT. GRADUATE COLLEGE, NOWSHERA VIRKAN, GUJRANWALA|8|C|G\n341404|GOVT. ASSOCIATE COLLEGE (W), JALLHAN, GUJRANWALA|8|F|A\n342101|GOVT. ZAMINDAR GRADUATE COLLEGE, GUJRAT|9|C|G\n342103|GOVT. ABDUL HAQ ISLAMIA ASSOCIATE COLLEGE, JALALPUR JATTAN, GUJRAT|9|C|A\n342104|GOVT. ASSOCIATE COLLEGE, KARIANWALA, GUJRAT|9|C|A\n342108|GOVT. IBN E AMEER GRADUATE COLLEGE (W), SHAHBAZPUR ROAD, J.P.JATTAN, GUJRAT|9|F|G\n342109|GOVT. ASSOCIATE COLLEGE (W), KUNJAH, GUJRAT|9|F|A\n342110|GOVT. ASSOCIATE COLLEGE (W), BHAGOWAL KALAN, GUJRAT|9|F|A\n342111|GOVT. NAWAB MUMTAZ ASSOCIATE COLLEGE (W), DAULAT NAGAR, GUJRAT|9|F|A\n342112|GOVT. FATIMA JINNAH GRADUATE COLLEGE (W), FAWARA CHOWK, GUJRAT|9|F|G\n342114|GOVT. GRADUATE COLLEGE OF COMMERCE, GUJRAT|9|C|G\n342115|GOVT. ASSOCIATE COLLEGE OF COMMERCE (W), GUJRAT|9|F|C\n342116|GOVT. ASSOCIATE COLLEGE, MANGOWAL GHARBI, GUJRAT|9|C|A\n342117|GOVT. ASSOCIATE COLLEGE, KOTLA ARAB ALI KHAN, GUJRAT|9|C|A\n342119|GOVT. ASSOCIATE COLLEGE (W), GULIYANA GUJRAT|9|F|A\n342120|GOVT. ASSOCIATE COLLEGE, DEONA, GUJRAT|9|C|A\n342121|GOVT. ASSOCIATE COLLEGE, G.T. ROAD, GUJRAT|9|C|A\n342122|GOVT. ASSOCIATE COLLEGE (W), RAILWAY ROAD, GUJRAT|9|F|A\n342123|GOVT. ASSOCIATE COLLEGE (W), MARGHZAR COLONY, GUJRAT|9|F|A\n342201|GOVT. GRADUATE COLLEGE, KHARIAN, GUJRAT|9|C|G\n342202|GOVT. GRADUATE COLLEGE, DINGA, GUJRAT|9|C|G\n342203|GOVT. ASSOCIATE COLLEGE, LALAMUSA, GUJRAT|9|C|A\n342204|GOVT. I.D. JANJUA GRADUATE COLLEGE (W), LALAMUSA, GUJRAT|9|F|G\n342205|GOVT. GRADUATE COLLEGE (W), DINGA GUJRAT|9|F|G\n342206|GOVT. ASGHAR ALI GRADUATE COLLEGE (W), KHARIAN, GUJRAT|9|F|G\n342207|GOVT. ASSOCIATE COLLEGE (W), KOTLA ARAB ALI KHAN, GUJRAT|9|F|A\n342208|GOVT. ASSOCIATE COLLEGE OF COMMERCE, KHARIAN, GUJRAT|9|C|C\n342301|GOVT. GRADUATE COLLEGE, SARAI ALAMGIR, GUJRAT|9|C|G\n342302|GOVT. ASSOCIATE COLLEGE (W), SARAI ALAMGIR, GUJRAT|9|F|A\n342303|GOVT. ASSOCIATE COLLEGE (W), DANDI DARA SARAI ALAMGIR, GUJRAT|9|F|A\n342304|GOVT. ASSOCIATE COLLEGE, JAGGO HEAD, GUJRAT|9|C|A\n343101|GOVT. GRADUATE COLLEGE, DASKA, SIALKOT|33|C|G\n343102|GOVT. ISLAMIA ASSOCIATE COLLEGE, MITRANWALI, DASKA, SIALKOT|33|C|A\n343103|GOVT. GRADUATE COLLEGE (W), DASKA, SIALKOT|33|F|G\n343104|GOVT. ASSOCIATE COLLEGE OF COMMERCE, DASKA, SIALKOT|33|C|C\n343105|GOVT. SHAHBAZ SHARIF ASSOCIATE COLLEGE (W), JAMKEY CHEEMA, SIALKOT|33|F|A\n343106|GOVT. ASSOCIATE COLLEGE (W), SATTRAH, DASKA, SIALKOT|33|F|A\n343107|GOVT. ASSOCIATE COLLEGE (W), MUNDEYKI GORAYA, SIALKOT|33|F|A\n343108|GOVT. ASSOCIATE COLLEGE, SIRANWALI, DASKA, SIALKOT|33|C|A\n343201|GOVT. GRADUATE COLLEGE, PASRUR, SIALKOT|33|C|G\n343202|GOVT. GRADUATE COLLEGE (W), PASRUR, SIALKOT|33|F|G\n343203|GOVT. ASSOCIATE COLLEGE (W), QILA KALARWALA, SIALKOT|33|F|A\n343204|GOVT. ASSOCIATE COLLEGE, CHAWINDA, SIALKOT|33|C|A\n343205|GOVT. ASSOCIATE COLLEGE OF COMMERCE, PASRUR, SIALKOT|33|C|C\n343206|GOVT. ASSOCIATE COLLEGE (W), CHAWINDA, PASRUR, SIALKOT|33|F|A\n343207|GOVT. ASSOCIATE COLLEGE (W), SOKANWIND, PASRUR, SIALKOT|33|F|A\n343208|GOVT. ASSOCIATE COLLEGE (W), CHOBARA, SIALKOT|33|F|A\n343209|GOVT. ASSOCIATE COLLEGE, CHOBARA, PASRUR, SIALKOT|33|C|A\n343210|GOVT. ASSOCIATE COLLEGE (W), BADDIANA, SIALKOT|33|F|A\n343301|GOVT. GRADUATE MURRAY COLLEGE, SIALKOT|33|C|G\n343302|GOVT. JINNAH ISLAMIA GRADUATE COLLEGE, SIALKOT|33|C|G\n343303|GOVT. ALLAMA IQBAL GRADUATE COLLEGE, PARIS ROAD, SIALKOT|33|C|G\n343304|GOVT. ISLAMIA GRADUATE COLLEGE, SAMBRIAL, SIALKOT|33|C|G\n343306|GOVT. ALLAMA IQBAL GRADUATE COLLEGE (W), SIALKOT|33|F|G\n343307|GOVT. GRADUATE COLLEGE (W), HAJIPURA SIALKOT|33|F|G\n343308|GOVT. GRADUATE COLLEGE (W), SAMBRIAL, SIALKOT|33|F|G\n343309|GOVT. ASSOCIATE COLLEGE (W), BHOPAL WALA, SIALKOT|33|F|A\n343310|GOVT. ASSOCIATE COLLEGE (W), KAPOOR WALI SIALKOT|33|F|A\n343311|GOVT. GRADUATE COLLEGE OF COMMERCE, SIALKOT|33|C|G\n343312|GOVT. ASSOCIATE COLLEGE OF COMMERCE (W), SIALKOT|33|F|C\n343313|GOVT. ASSOCIATE COLLEGE OF COMMERCE, SIALKOT|33|C|C\n343315|GOVT. MUHAMMAD NAWAZ SHARIF GRADUATE COLLEGE (W), SIALKOT|33|F|G\n343316|GOVT. FATIMA JINNAH ASSOCIATE COLLEGE (W), DHALLYWALI SIALKOT|33|F|A\n343317|GOVT. ASSOCIATE COLLEGE (W), BAJRAH GARHI, SIALKOT|33|F|A\n343318|GOVT. ASSOCIATE COLLEGE (W), MARAKIWAL, SIALKOT|33|F|A\n343319|GOVT. ASSOCIATE COLLEGE (W), ORA, SIALKOT|33|F|A\n343320|GOVT. ASSOCIATE COLLEGE (W), SAIDPUR, SIALKOT|33|F|A\n343321|GOVT. ASSOCIATE COLLEGE(W), ORA, SIALKOT|33|F|A\n343322|GOVT. ASSOCIATE COLLEGE(W), SAIDPUR,  SIALKOT|33|F|A\n344102|GOVT. ISLAMIA GRADUATE COLLEGE, BADDOMALHI, NAROWAL|24|C|G\n344103|GOVT. GRADUATE COLLEGE, ZAFARWAL NAROWAL|24|C|G\n344104|GOVT. MUSLIM GRADUATE COLLEGE (W), NAROWAL|24|F|G\n344105|GOVT. GRADUATE COLLEGE (W), BADDOMALHI, NAROWAL|24|F|G\n344106|GOVT. ASSOCIATE COLLEGE (W), ZAFARWAL, NAROWAL|24|F|A\n344107|GOVT. ASSOCIATE COLLEGE (W), TARKAHANA MURIDA SHAKARGARH, NAROWAL|24|F|A\n344108|GOVT. ZAINAB BIBI HAMEEDA ASSOCIATE COLLEGE (W), TALWANDI BHINDRAN, NAROWAL|24|F|A\n344110|GOVT. ASSOCIATE COLLEGE OF COMMERCE, SHAKARGARH, NAROWAL|24|C|C\n344111|GOVT. ASSOCIATE COLLEGE OF COMMERCE, NAROWAL|24|C|C\n344201|GOVT. GRADUATE COLLEGE, SHAKARGARH, NAROWAL|24|C|G\n344202|GOVT. ASSOCIATE COLLEGE (W), SHAKARGARH, NAROWAL|24|F|A\n344203|GOVT. ASSOCIATE COLLEGE (W), KOT NAINAN, SHAKARGARH, NAROWAL|24|F|A\n344204|GOVT. ASSOCIATE COLLEGE (W), KANJROOR, SHAKARGARH, NAROWAL|24|F|A\n345101|GOVT. GRADUATE COLLEGE, PINDI BHATTIAN, HAFIZABAD|10|C|G\n345102|GOVT. GRADUATE COLLEGE (W), PINDI BHATTIAN, HAFIZABAD|10|F|G\n345103|GOVT. GRADUATE COLLEGE (W), JALALPUR BHATTIAN, HAFIZABAD|10|F|G\n345104|GOVT. ASSOCIATE COLLEGE OF COMMERCE, HAFIZABAD|10|C|C\n345106|GOVT. ASSOCIATE COLLEGE (W), SUKHEKI MANDI, HAFIZABAD|10|F|A\n345107|GOVT. GRADUATE COLLEGE (W), SHERQI SIDE, HAFIZABAD|10|F|G\n345201|GOVT. GRADUATE COLLEGE, HAFIZABAD|10|C|G\n345202|GOVT. ISLAMIA GRADUATE COLLEGE (W), HAFIZABAD|10|F|G\n345203|GOVT. GRADUATE COLLEGE JALALPUR BHATTIAN, HAFIZABAD|10|C|G\n345204|GOVT. ASSOCIATE COLLGE (W), KALIKE MANDI, HAFIZABAD|10|F|A\n346101|GOVT. ASSOCIATE COLLEGE, MALAKWAL, MANDI BAHAUDDIN|19|C|A\n346102|GOVT. GRADUATE COLLEGE (W), MALAKWAL, MANDI BAHAUDDIN|19|F|G\n346103|GOVT. ASSOCIATE COLLEGE (W), RUKAN MALIKWAL, MANDI BAHAUDDIN|19|F|A\n346104|GOVT. ASSOCIATE COLLEGE, RUKAN MALIKWAL, MANDI BAHAUDDIN|19|C|A\n346105|GOVT. ASSOCIATE COLLEGE (W), HARIA, MANDI BAHAUDDIN|19|F|A\n346201|GOVT. GRADUATE COLLEGE, MANDI BAHAUDDIN|19|C|G\n346202|GOVT. GRADUATE COLLEGE (W), MANDI BAHAUDDIN|19|F|G\n346203|GOVT. NAWAZ SHARIF ASSOCIATE COLLEGE (W), MANDI BAHAUDDIN|19|F|A\n346204|GOVT. ASSOCIATE COLLEGE OF COMMERCE, MONG, MANDI BAHAUDDIN|19|C|C\n346206|GOVT. ASSOCIATE COLLEGE (W), BOSAL SUKHA MALIKWAL, MANDI BAHAUDDIN|19|F|A\n346207|GOVT. ASSOCIATE COLLEGE (W), KUTHIALA, SHEIKHAN, MANDI BAHAUDDIN|19|F|A\n346208|GOVT. ASSOCIATE COLLEGE (W), CHILLIANWALA, MANDI BAHAUDDIN|19|F|A\n346209|GOVT. ASSOCIATE COLLEGE (W), BHEROWAL, MANDI BAHAUDDIN|19|F|A\n346210|GOVT. ASSOCIATE COLLEGE (W), MANGAT, MANDI BAHAUDDIN|19|F|A\n346301|GOVT. PIR YAQOOB SHAH ASSOCIATE COLLEGE, PHALIA, MANDI BAHAUDDIN|19|C|A\n346302|GOVT. ASSOCIATE COLLEGE, BHOA HASSAN, MANDI BAHAUDDIN|19|C|A\n346303|GOVT. GRADUATE COLLEGE (W), PHALIA, MANDI BAHAUDDIN|19|F|G\n346304|GOVT. ASSOCIATE COLLEGE (W), QADIRABAD, MANDI BAHAUDDIN|19|F|A\n346305|GOVT. ASSOCIATE COLLEGE (W), PAHRIANWALI, MANDI BAHAUDDIN|19|F|A\n346306|GOVT. ASSOCIATE COLLEGE OF COMMERCE, PHALIA, MANDI BAHAUDDIN|19|C|C\n346307|GOVT. ZULFIQAR ALI BHUTTO SHAHEED ASSOCIATE COLLEGE, PAHRIANWALI, MANDI BAHAUDDIN|19|C|A\n346308|GOVT. BENAZIR SHAHEED GRADUATE COLLEGE (W), BHAGAT, MANDI BAHAUDDIN|19|F|G\n346309|GOVT. ASSOCIATE COLLEGE (W), WASU, MANDI BAHAUDDIN|19|F|A\n346310|GOVT. ASSOCIATE COLLEGE (W), JOKALIAN, MANDI BAHAUDDIN|19|F|A\n351101|GOVT. GRADUATE COLLEGE, CHUNIAN, KASUR|13|C|G\n351102|GOVT. GRADUATE COLLEGE (W), CHUNIAN, KASUR|13|F|G\n351103|GOVT. ASSOCIATE COLLEGE OF COMMERCE, CHUNIAN, KASUR|13|C|C\n351104|GOVT. CHANDO BEGUM GRADUATE COLLEGE (W), KANGANPUR, CHUNIAN, KASUR|13|F|G\n351105|GOVT. ASSOCIATE COLLEGE (W), ELLAHBAD, KASUR|13|F|A\n351201|GOVT. ASSOCIATE COLLEGE, MUSTAFA ABAD, KASUR|13|C|A\n351202|GOVT. GRADUATE COLLEGE, KOT RADHA KISHAN, KASUR|13|C|G\n351203|GOVT. ISLAMIA GRADUATE COLLEGE, KASUR|13|C|G\n351204|GOVT. GRADUATE COLLEGE (W), KASUR|13|F|G\n351205|GOVT. GRADUATE COLLEGE (W), KOT RADHA KISHAN, KASUR|13|F|G\n351206|GOVT. ASSOCIATE COLLEGE OF COMMERCE, KASUR|13|C|C\n351207|GOVT. SYED CHARAGH SHAH ASSOCIATE COLLEGE (W), KOT MURAD KHAN, KASUR|13|F|A\n351208|GOVT. HANIFAN BEGUM GRADUATE COLLEGE (W), MUSTAFABAD, KASUR|13|F|G\n351210|GOVT. ASSOCIATE COLLEGE (W), KHUDIAN KHAS, KASUR|13|F|A\n351211|GOVT. GRADUATE COLLEGE (W), CHANGA MANGA, KASUR|13|F|G\n351301|GOVT. GRADUATE COLLEGE, PATTOKI, KASUR|13|C|G\n351302|GOVT. GRADUATE COLLEGE, PHOOL NAGAR, KASUR|13|C|G\n351303|GOVT. GRADUATE COLLEGE (W), PATTOKI, KASUR|13|F|G\n351304|GOVT. GRADUATE COLLEGE (W), PHOOL NAGAR, KASUR|13|F|G\n351305|GOVT. ASSOCIATE COLLEGE OF COMMERCE, PATTOKI, KASUR|13|C|C\n352101|GOVT. GRADUATE COLLEGE (W), SAMANABAD, LAHORE|16|F|G\n352102|GOVT. GRADUATE COLLEGE (W), WAHDAT COLONY, LAHORE|16|F|G\n352103|GOVT. GRADUATE COLLEGE (W), E BLOCK MODEL TOWN, LAHORE|16|F|G\n352104|GOVT. GRADUATE COLLEGE (W), RAIWIND, LAHORE|16|F|G\n352105|GOVT. GRADUATE COLLEGE, RAIWIND, LAHORE|16|C|G\n352106|GOVT. GRADUATE COLLEGE, MODEL TOWN, LAHORE|16|C|G\n352107|GOVT. SHAH HUSSAIN GRADUATE COLLEGE, CHUNG, LAHORE|16|C|G\n352108|GOVT. GRADUATE COLLEGE, TOWNSHIP, LAHORE|16|C|G\n352109|GOVT. GRADUATE COLLEGE OF SCIENCE WAHDAT ROAD, LAHORE|16|C|G\n352110|GOVT. GRADUATE COLLEGE, SABZAZAR, LAHORE|16|C|G\n352111|GOVT. ISLAMIA GRADUATE COLLEGE, ALLAMA IQBAL TOWN, LAHORE|16|C|G\n352112|GOVT. ISLAMIA GRADUATE COLLEGE, RAILWAY ROAD, LAHORE|16|C|G\n352113|GOVT. ISLAMIA GRADUATE COLLEGE, CIVIL LINES, LAHORE|16|C|G\n352114|GOVT. M.A.O. GRADUATE COLLEGE, LAHORE|16|C|G\n352115|GOVT. DYAL SINGH GRADUATE COLLEGE, LAHORE|16|C|G\n352116|GOVT. ASSOCIATE COLLEGE (W), BUND ROAD, LAHORE|16|F|A\n352117|GOVT. ASSOCIATE COLLEGE (W), BILAL GANJ, LAHORE|16|F|A\n352118|GOVT. JINNAH GRADUATE COLLEGE (W), MOZANG, LAHORE|16|F|G\n352119|GOVT. APWA GRADUATE COLLEGE (W), LAHORE|16|F|G\n352120|GOVT. GRADUATE COLLEGE (W), GULBERG, LAHORE|16|F|G\n352121|GOVT. KULLI YAT UL BANAT ASSOCIATE COLLEGE (W), LAHORE|16|F|A\n352123|GOVT. GRADUATE COLLEGE (W), WAPDA TOWN, LAHORE|16|F|G\n352124|GOVT. GRADUATE COLLEGE (W), TOWNSHIP, LAHORE|16|F|G\n352125|GOVT. ASSOCIATE COLLEGE (W), GAWALMANDI, LAHORE|16|F|A\n352223|GOVT. ISLAMIA GRADUATE COLLEGE (W), LAHORE CANTT, LAHORE|16|F|G\n352224|GOVT. ISLAMIA ASSOCIATE COLLEGE, LAHORE CANTT, LAHORE|16|C|A\n352225|GOVT. ASSOCIATE COLLEGE (W), MUSTAFAABAD, LAHORE|16|F|A\n352226|GOVT. ISLAMIA GRADUATE COLLEGE (W), COOPER ROAD, LAHORE|16|F|G\n352227|University Of Home Economics Lahore|16|C|A\n352228|GOVT. GRADUATE COLLEGE (W), BAGHBANPURA, LAHORE|16|F|G\n352229|GOVT. AYESHA GRADUATE COLLEGE (W), TIMBER MARKET, RAVI ROAD, LAHORE|16|F|G\n352230|GOVT. GRADUATE COLLEGE (W), SHAD BAGH, LAHORE|16|F|G\n352231|GOVT. ASSOCIATE COLLEGE (W), DATA NAGAR, LAHORE|16|F|A\n352232|GOVT. GRADUATE COLLEGE (W), KOT KHAWAJA SAEED, LAHORE|16|F|G\n352233|GOVT. GRADUATE COLLEGE, RAVI ROAD, SHAHDARA, LAHORE|16|C|G\n352234|GOVT. SHALIMAR GRADUATE COLLEGE, LAHORE|16|C|G\n352239|GOVT. GRADUATE COLLEGE, GULBERG, LAHORE|16|C|G\n352240|GOVT. GRADUATE COLLEGE (W), GULSHAN RAVI, LAHORE|16|F|G\n352241|GOVT. GRADUATE COLLEGE (W), SHAHDARA, LAHORE|16|F|G\n352242|GOVT. GRADUATE COLLEGE (W), KOT LAKHPAT, LAHORE|16|F|G\n352244|GOVT. GRADUATE COLLEGE (W), MARGHZAR COLONY, LAHORE|16|F|G\n352245|GOVT. GRADUATE COLLEGE (W), KAHNA NAU, LAHORE|16|F|G\n352246|GOVT. GRADUATE COLLEGE (W), SHALIMAR TOWN, LAHORE|16|F|G\n352247|GOVT. FATIMA JINNAH GRADUATE COLLEGE (W), CHUNA MANDI, LAHORE|16|F|G\n352248|GOVT. ASSOCIATE COLLEGE, (W), SALAMATPURA, LAHORE|16|F|A\n352249|GOVT. ASSOCIATE COLLEGE, SHALIMAR TOWN, LAHORE|16|C|A\n352250|GOVT. KHAWAJA RAFIQUE SHAHEED ASSOCIATE COLLEGE, WALTON ROAD, LAHORE|16|C|A\n352251|GOVT. QUEEN MARY GRADUATE COLLEGE (W), LAHORE|16|F|G\n352252|GOVT. RABIA BASRI GRADUATE COLLEGE (W), WALTON ROAD, LAHORE|16|F|G\n352253|GOVT. GRADUATE COLLEGE OF COMMERCE, HUNZA BLOCK, ALLAMA IQBAL TOWN, LAHORE|16|C|G\n352254|GOVT. ASSOCIATE COLLEGE OF COMMERCE, BAGHBANPURA, LAHORE|16|C|C\n352255|GOVT. ASSOCIATE COLLEGE OF COMMERCE, SHAHDARA, LAHORE|16|C|C\n352256|GOVT. ASSOCIATE COLLEGE OF COMMERCE, TOWNSHIP, LAHORE|16|C|C\n352257|GOVT. ASSOCIATE COLLEGE OF COMMERCE, SAMANABAD, LAHORE|16|C|C\n352258|GOVT. ASSOCIATE COLLEGE (W), CHUNG, LAHORE|16|F|A\n352259|GOVT. GRADUATE COLLEGE (W), RAKH CHABEEL, LAHORE|16|F|G\n352260|GOVT. ASSOCIATE COLLEGE (W), HAIR, BEDIAN, LAHORE|16|F|A\n352264|GOVT. GRADUATE COLLEGE (W), ISLAMPURA, LAHORE|16|F|G\n352265|GOVT. ASSOCIATE COLLEGE, BEDIAN ROAD, LAHORE|16|C|A\n352266|GOVT. ASSOCIATE COLLEGE, KAHNA NAU, LAHORE|16|C|A\n352267|GOVT. GRADUATE COLLEGE (W), THOKAR NIAZ BAIG, LAHORE|16|F|G\n352273|KINNAIRD COLLEGE FOR WOMEN, LAHORE|16|F|A\n352401|GOVT. ASSOCIATE COLLEGE (W), MANGA MANDI, LAHORE|16|F|A\n352405|GOVT. ASSOCIATE COLLEGE OF COMMERCE (W), LYTTON ROAD, LAHORE|16|F|C\n354101|GOVT. ASSOCIATE COLLEGE (W), FEROZEWALA, SHEIKHUPURA|32|F|A\n354102|GOVT. GRADUATE COLLEGE (W), VANDALA DIYAL SHAH, FEROZWALA, SHEIKHUPURA|32|F|G\n354201|GOVT. ASSOCIATE COLLEGE, NARANG MANDI, SHEIKHUPURA|32|C|A\n354202|GOVT. GRADUATE COLLEGE (W), MURIDKE, SHEIKHUPURA|32|F|G\n354203|GOVT. ASSOCIATE COLLEGE (W), NARANG MANDI, SHEIKHUPURA|32|F|A\n354301|GOVT. GRADUATE COLLEGE, CIVIL LINES, SHEIKHUPURA|32|C|G\n354302|GOVT. WARIS SHAH GRADUATE COLLEGE, JANDIALA SHER KHAN SHEIKHUPURA|32|C|G\n354303|GOVT. GRADUATE COLLEGE (W), SHEIKHUPURA|32|F|G\n354304|GOVT. WARIS SHAH ASSOCIATE COLLEGE (W), JANDIALA SHER KHAN, SHEIKHUPURA|32|F|A\n354305|GOVT. ASSOCIATE COLLEGE (W), BHIKHI, SHEIKHUPURA|32|F|A\n354306|GOVT. ASSOCIATE COLLEGE OF COMMERCE, NARANG MANDI, SHEIKHUPURA|32|C|C\n354307|GOVT. PIR BAHAR SHAH GRADUATE COLLEGE (W), SHEIKHUPURA|32|F|G\n354309|GOVT. ASSOCIATE COLLEGE (W), KHANQA DOGARAN, SHEIKHUPURA|32|F|A\n354310|GOVT. GRADUATE COLLEGE (W), FAROOQABAD, SHEIKHUPURA|32|F|G\n354311|GOVT. GRADUATE COLLEGE, MURIDKE, SHEIKHUPURA|32|C|G\n354401|GOVT. ASSOCIATE COLLEGE, SHARAQPUR SHARIF, SHEIKHUPURA|32|C|A\n354402|GOVT. GRADUATE COLLEGE (W), SHARAQPUR SHARIF, SHEIKHUPURA|32|F|G\n354403|GOVT. ASSOCIATE COLLEGE OF COMMERCE, SHARAQPUR SHARIF, SHEIKHUPURA|32|C|C\n354404|GOVT. GRADUATE COLLEGE OF COMMERCE, SHEIKHUPURA|32|C|G\n354501|GOVT. ASSOCIATE COLLEGE (W), SAFDARABAD, SHEIKHUPURA|32|F|A\n354502|GOVT. ASSOCIATE COLLEGE, SAFDARABAD, SHEIKHUPURA|32|C|A\n356101|GOVT. GURU NANAK GRADUATE COLLEGE, NANKANA SAHIB|23|C|G\n356102|GOVT. GURU NANAK GRADUATE COLLEGE (W), NANKANA SAHIB|23|F|G\n356103|GOVT. GRADUATE COLLEGE (W), WARBURTON, NANKANA SAHIB|23|F|G\n356104|GOVT. ASSOCIATE COLLEGE OF COMMERCE, NANKANA SAHIB|23|C|C\n356106|GOVT. GRADUATE COLLEGE (W), BUCHEKI, NANKANA SAHIB|23|F|G\n356107|GOVT. GRADUATE COLLEGE (W), MANDI FAIZABAD, NANKANA SAHIB|23|F|G\n356108|GOVT. ASSOCIATE COLLEGE, SYED WALA, NANKANA SAHIB|23|C|A\n356109|Govt. Associate College, Morekhunda, Nankana Sahib|23|C|A\n356301|GOVT. GRADUATE COLLEGE, SHAHKOT, NANKANA SAHIB|23|C|G\n356302|GOVT. GRADUATE COLLEGE (W), SHAHKOT, NANKANA SAHIB|23|F|G\n356401|GOVT. ISLAMIA GRADUATE COLLEGE, SANGLA HILL, NANKANA SAHIB|23|C|G\n356402|GOVT. GRADUATE COLLEGE (W), SANGLA HILL, NANKANA SAHIB|23|F|G\n361101|GOVT. GRADUATE COLLEGE, CIVIL LINES, MULTAN|21|C|G\n361102|Govt. Emerson College Bosan Road, Multan|21|C|A\n361103|GOVT. GRADUATE COLLEGE OF SCIENCE, NEAR PTCL EXCHANGE, CHUNGI NO. 6, MULTAN|21|C|G\n361104|GOVT. WILLAYAT HUSSAIN ISLAMIA GRADUATE COLLEGE, MULTAN|21|C|G\n361105|GOVT. ALAMDAR HUSSAIN ISLAMIA GRADUATE COLLEGE, MULTAN|21|C|G\n361106|GOVT. ASSOCIATE COLLEGE, MAKHDOOM RASHEED, MULTAN|21|C|A\n361107|GOVT. MILLAT GRADUATE COLLEGE, MUMTAZABAD, MULTAN|21|C|G\n361109|GOVT. GRADUATE COLLEGE (W), MUMTAZABAD, MULTAN|21|F|G\n361110|GOVT. GRADUATE COLLEGE (W), SHAH RUKN E ALAM, MULTAN|21|F|G\n361111|GOVT. GRADUATE COLLEGE (W), CHUNGI NO. 14, MULTAN|21|F|G\n361112|GOVT. GRADUATE COLLEGE (W), MAKHDOOM RASHEED, MULTAN|21|F|G\n361113|GOVT. GRADUATE COLLEGE OF HOME ECONOMICS(W), MADNI CHOWK, MULTAN|21|F|G\n361114|GOVT. GRADUATE COLLEGE (W), CHUNGI NO. 6, MULTAN|21|F|G\n361115|GOVT. FATIMA JINNAH GRADUATE COLLEGE (W), MASOOM SHAH ROAD, MULTAN|21|F|G\n361116|GOVT. ZAINAB GRADUATE COLLEGE (W), CHOWK SHAHIDAN, RAILWAY ROAD, MULTAN|21|F|G\n361117|GOVT. GRADUATE COLLEGE, QADIRPUR RAN, MULTAN|21|C|G\n361119|GOVT. GRADUATE COLLEGE OF COMMERCE, QASIMPUR COLONY, MULTAN|21|C|G\n361120|GOVT. GRADUATE COLLEGE OF COMMERCE, MULTAN CANTT, MULTAN|21|C|G\n361122|GOVT. ASSOCIATE COLLEGE (W), MUZAFFARABAD, MULTAN|21|F|A\n361123|GOVT. ASSOCIATE COLLEGE (W), QADIRPUR RAN, MULTAN|21|F|A\n361124|GOVT. ASSOCIATE COLLEGE (W), BASTI MALUK, MULTAN|21|F|A\n361201|GOVT. GRADUATE COLLEGE, SHUJABAD, MULTAN|21|C|G\n361202|GOVT. GRADUATE COLLEGE (W), NEAR KALI PUL, SHUJABAD, Multan|21|F|G\n361203|GOVT. GRADUATE COLLEGE OF COMMERCE, SHUJABAD, MULTAN|21|C|G\n361301|GOVT. ASSOCIATE COLLEGE (W), NAWABPUR MULTAN|21|F|A\n361401|GOVT. GRADUATE COLLEGE, JALALPUR PIRWALA, MULTAN|21|C|G\n361402|GOVT. GRADUATE COLLEGE (W), JALALPUR PIRWALA, MULTAN|21|F|G\n361403|GOVT. ASSOCIATE COLLEGE OF COMMERCE (W), QASIMPUR COLONY, MULTAN|21|F|C\n361406|Emerson University Multan|21|C|A\n363101|GOVT. GRADUATE COLLEGE, BUREWALA, VEHARI|35|C|G\n363102|GOVT. GRADUATE COLLEGE (W), BUREWALA, VEHARI|35|F|G\n363103|GOVT. ASSOCIATE COLLEGE (W), SHEIKH FAZAL, VEHARI|35|F|A\n363104|GOVT. ASSOCIATE COLLEGE (W), GAGGO, VEHARI|35|F|A\n363105|GOVT. GRADUATE COLLEGE OF COMMERCE, CHUNGI NO. 5, BUREWALA, VEHARI|35|C|G\n363201|GOVT. GRADUATE COLLEGE, MAILSI, VEHARI|35|C|G\n363202|GOVT. GRADUATE COLLEGE (W), MAILSI VEHARI|35|F|G\n363203|GOVT. ASSOCIATE COLLEGE, TIBBA SULTANPUR, MAILSI, VEHARI|35|C|A\n363204|GOVT. ASSOCIATE COLLEGE (W), TIBBA SULTANPUR, VEHARI|35|F|A\n363205|GOVT. ASSOCIATE COLLEGE OF COMMERCE, MAILSI, VEHARI|35|C|C\n363301|GOVT. GRADUATE COLLEGE, VEHARI|35|C|G\n363302|GOVT. GRADUATE COLLEGE (W), VEHARI|35|F|G\n363303|GOVT. ASSOCIATE COLLEGE (W), MACHIWAL, VEHARI|35|F|A\n363304|GOVT. ASSOCIATE COLLEGE (W), LUDDAN, VEHARI|35|F|A\n363305|GOVT. GRADUATE COLLEGE OF COMMERCE, VEHARI|35|C|G\n363307|GOVT. ASSOCIATE COLLEGE (W), KARAMPUR, VEHARI|35|F|A\n363307_1|GOVT. ASSOCIATE COLLEGE, KABIRWALA, KHANEWAL|35|C|A\n364101|GOVT. ASSOCIATE COLLEGE, KABIRWALA, KHANEWAL|14|C|A\n364102|GOVT. GRADUATE COLLEGE, ABDUL HAKIM, KHANEWAL|14|C|G\n364103|GOVT. GRADUATE COLLEGE (W), KABIRWALA, KHANEWAL|14|F|G\n364104|GOVT. ASSOCIATE COLLEGE (W), SARAI SIDHU, KHANEWAL|14|F|A\n364105|GOVT. ASSOCIATE COLLEGE (W), ABDUL HAKIM, KHANEWAL|14|F|A\n364106|GOVT. ASSOCIATE COLLEGE OF COMMERCE, KABIRWALA, KHANEWAL|14|C|C\n364107|GOVT. aSSOCIATE COLLEGE, SARDARPUR, KABIRWALA|14|C|A\n364201|GOVT. GRADUATE COLLEGE, KHANEWAL|14|C|G\n364202|GOVT. GRADUATE COLLEGE (W), KHANEWAL|14|F|G\n364203|GOVT. ASSOCIATE COLLEGE, SARAI SIDHU, KHANEWAL|14|C|A\n364204|GOVT. GRADUATE COLLEGE OF COMMERCE, PEOPLES COLONY, KHANEWAL|14|C|G\n364206|GOVT. ASSOCIATE COLLEGE (W), KATCHA KHO, KHANEWAL|14|F|A\n364301|GOVT. GRADUATE COLLEGE, MIAN CHANNU, KHANEWAL|14|C|G\n364302|GOVT. ASSOCIATE COLLEGE (W), MIAN CHANNU, KHANEWAL|14|F|A\n364303|GOVT. ASSOCIATE COLLEGE (W), TULAMBA, KHANEWAL|14|F|A\n364304|GOVT. ASSOCIATE COLLEGE OF COMMERCE, MUSA VIRAK, MIAN CHANNU, KHANEWAL|14|C|C\n364401|GOVT. GRADUATE COLLEGE, JAHANIAN, KHANEWAL|14|C|G\n364402|GOVT. GRADUATE COLLEGE (W), JAHANIAN, KHANEWAL|14|F|G\n366101|GOVT. GRADUATE COLLEGE, LODHRAN|18|C|G\n366102|GOVT. ASSOCIATE COLLEGE (W), LODHRAN|18|F|A\n366103|GOVT. SYED NASAR UD DIN SHAH ASSOCIATE COLLEGE, GOGRAN, LODHRAN|18|C|A\n366104|GOVT. ASSOCIATE COLLEGE OF COMMERCE, LODHRAN|18|C|C\n366106|GOVT. ABDUL KARIM ASSOCIATE COLLEGE (W), GALAYWAL, LODHRAN|18|F|A\n366201|GOVT. GRADUATE COLLEGE, KAHROR PAKKA, LODHRAN|18|C|G\n366202|GOVT. GRADUATE COLLEGE (W), KAHROR PACCA LODHRAN|18|F|G\n366301|GOVT. GRADUATE COLLEGE, DUNYAPUR LODHRAN|18|C|G\n366302|GOVT. ASSOCIATE COLLEGE, MAKHDOOM AALI LODHRAN|18|C|A\n366303|GOVT. GRADUATE COLLEGE (W), DUNYAPUR, LODHRAN|18|F|G\n366304|GOVT. ASSOCIATE COLLEGE (W), 365/WB, DUNYAPUR LODHRAN|18|F|A\n371101|GOVT. GRADUATE COLLEGE, ATTOCK|0|C|G\n371102|GOVT. GRADUATE COLLEGE (W), ATTOCK|0|F|G\n371103|GOVT. ASSOCIATE COLLEGE OF COMMERCE, ATTOCK|0|C|C\n371201|GOVT. ASSOCIATE COLLEGE, FATEH JANG, ATTOCK|0|C|A\n371202|GOVT. ASSOCIATE COLLEGE (W), FATEH JANG, ATTOCK|0|F|A\n371203|GOVT. ASSOCIATE COLLEGE, BAHTAR, ATTOCK|0|C|A\n371301|GOVT. ASSOCIATE COLLEGE, PINDI GHEB, ATTOCK|0|C|A\n371302|GOVT. ASSOCIATE COLLEGE (W), PINDI GHEB, ATTOCK|0|F|A\n371303|GOVT. ASSOCIATE COLLEGE OF COMMERCE, PINDIGHEB, ATTOCK|0|C|C\n371401|GOVT. ASSOCIATE COLLEGE, JAND, ATTOCK|0|C|A\n371402|GOVT. ASSOCIATE COLLEGE, CHHAB, ATTOCK|0|C|A\n371403|GOVT. ASSOCIATE COLLEGE, BASAL, ATTOCK|0|C|A\n371404|GOVT. ASSOCIATE COLLEGE (W), JAND, ATTOCK|0|F|A\n371405|GOVT. ASSOCIATE COLLEGE OF COMMERCE, JAND, ATTOCK|0|C|C\n371501|GOVT. ASSOCIATE COLLEGE (W), HASSAN ABDAL ATTOCK|0|F|A\n371502|GOVT. ASSOCIATE COLLEGE, HASSAN ABDAL, ATTOCK|0|C|A\n371601|GOVT. SHUJA KHANZADA SHAHEED ASSOCIATE COLLEGE, HAZRO, ATTOCK|0|C|A\n371602|GOVT. ASSOCIATE COLLEGE (W), HAZRO, ATTOCK|0|F|A\n372101|GOVT. GRADUATE COLLEGE, G.T. ROAD, JHELUM|11|C|G\n372102|GOVT. GRADUATE COLLEGE, TAHLIANWALA, JHELUM|11|C|G\n372103|GOVT. GRADUATE COLLEGE (W), JHELUM|11|F|G\n372104|GOVT. ASSOCIATE COLLEGE, RASULPUR, SOHAWA, JHELUM|11|C|A\n372105|GOVT. GRADUATE COLLEGE OF COMMERCE, BILAL TOWN, JHELUM|11|C|G\n372106|GOVT. ASSOCIATE COLLEGE OF COMMERCE (W), JHELUM|11|F|C\n372108|GOVT. ASSOCIATE COLLEGE (W), CIVIL LINES, JHELUM|11|F|A\n372109|GOVT. ASSOCIATE COLLEGE (W), SOHAWA, JHELUM|11|F|A\n372110|GOVT. ASSOCIATE COLLEGE (W), SANGHOI, JHELUM|11|F|A\n372201|GOVT. AL BIRUNI ASSOCIATE COLLEGE, PIND DADAN KHAN, JHELUM|11|C|A\n372202|GOVT. ASSOCIATE COLLEGE (W), PIND DADAN KHAN, JHELUM|11|F|A\n372203|GOVT. ASSOCIATE COLLEGE OF COMMERCE, PIND DADAN KHAN, JHELUM|11|C|C\n372204|GOVT. ASSOCIATE COLLEGE (W), JALALPUR SHARIF, PIND DADAN KHAN, JHELUM|11|F|A\n372301|GOVT. ASSOCIATE COLLEGE, SOHAWA, JHELUM|11|C|A\n372401|GOVT. GRADUATE COLLEGE, DINA JHELUM|11|C|G\n372402|GOVT. ASSOCIATE COLLEGE (W), DINA, JHELUM|11|F|A\n373101|GOVT. ASSOCIATE COLLEGE (W), KAHUTA, RAWALPINDI|29|F|A\n373102|GOVT. ASSOCIATE COLLEGE OF COMMERCE DUPRI, KAHUTA, RAWALPINDI|29|C|C\n373103|GOVT. GRADUATE COLLEGE, KAHUTA, RAWALPINDI|29|C|G\n373201|Govt. Associate College Murree, Rawalpindi|29|C|A\n373202|Govt. Associate College (W) Murree, Rawalpindi|29|F|A\n373203|GOVT. ASSOCIATE COLLEGE (W), PHAGWARI MURREE, RAWALPINDI|29|F|A\n373204|GOVT. ASSOCIATE COLLEGE OF COMMERCE, MURREE, RAWALPINDI|29|C|C\n373301|GOVT. GRADUATE COLLEGE, ASGHAR MALL, RAWALPINDI|29|C|G\n373302|GOVT. GORDON GRADUATE COLLEGE, RAWALPINDI|29|C|G\n373303|GOVT. HASHMAT ALI ISLAMIA ASSOCIATE COLLEGE, RAWALPINDI|29|C|A\n373304|GOVT. GRADUATE COLLEGE, SATELLITE TOWN, RAWALPINDI|29|C|G\n373305|GOVT. ASSOCIATE COLLEGE (W), KHAYABAN E SIR SYED, RAWALPINDI|29|F|A\n373306|GOVT. KHADIJA UMAR ASSOCIATE COLLEGE (W), TENCH BHATTA, RAWALPINDI|29|F|A\n373307|GOVT. ASSOCIATE COLLEGE (W), F BLOCK SATELLITE TOWN, RAWALPINDI|29|F|A\n373308|GOVT. GRADUATE COLLEGE (W), B BLOCK SATELLITE TOWN, RAWALPINDI|29|F|G\n373309|GOVT. GRADUATE COLLEGE (W), MOHANPURA, RAWALPINDI|29|F|G\n373310|GOVT. GRADUATE COLLEGE (W), (ZAFAR UL HAQ) ROAD, RAWALPINDI|29|F|G\n373311|GOVT. GRADUATE COLLEGE (W), PESHAWAR RD, RAWALPINDI|29|F|G\n373312|GOVT. ASSOCIATE COLLEGE (W), MUSLIM TOWN, RAWALPINDI|29|F|A\n373313|GOVT. GRADUATE COLLEGE (W), MURREE ROAD, RAWALPINDI|29|F|G\n373314|GOVT. ASSOCIATE COLLEGE (W), DHOKE KALA KHAN, RAWALPINDI|29|F|A\n373315|GOVT. ASSOCIATE COLLEGE (W), DHOKE HASSU, RAWALPINDI|29|F|A\n373316|GOVT. ASSOCIATE COLLEGE (W), DHOK ELLAHI BUKHSH, RAWALPINDI|29|F|A\n373316_1|GOVT. ASSOCIATE COLLEGE (W), JHANDA CHICHI, RAWALPINDI|29|F|A\n373317|GOVT. ASSOCIATE COLLEGE (W), DHOKE RATTA, RAWALPINDI|29|F|A\n373318|GOVT. ASSOCIATE COLLEGE (W), JHANDA CHICHI, RAWALPINDI|29|F|A\n373319|GOVT. VIQAR UN NISA GRADUATE COLLEGE, (W), RAWALPINDI|29|F|G\n373320|RAWALPINDI WOMEN UNIVERSITY, RAWALPINDI|29|F|A\n373321|GOVT. ASSOCIATE COLLEGE (W), GAWALMANDI, RAWALPINDI|29|F|A\n373322|GOVT. ASSOCIATE COLLEGE (W), DHOKE MANGTAL, RAWALPINDI|29|F|A\n373323|GOVT. ASSOCIATE COLLEGE, CHAKRI, RAWALPINDI|29|C|A\n373324|GOVT. ASSOCIATE COLLEGE (W), SIHAL, RAWALPINDI|29|F|A\n373325|GOVT. ASSOCIATE COLLEGE (W), REHMATABAD, RAWALPINDI|29|F|A\n373326|GOVT. ASSOCIATE COLLEGE, CHAK BELI KHAN, RAWALPINDI|29|C|A\n373327|GOVT. ASSOCIATE COLLEGE, KOTLI SATTIAN, RAWALPINDI|29|C|A\n373328|GOVT. GRADUATE COLLEGE OF COMMERCE, RAWALPINDI|29|C|G\n373329|GOVT. ASSOCIATE COLLEGE OF COMMERCE, RAWALPINDI CANTT, RAWALPINDI|29|C|C\n373330|GOVT. ASSOCIATE COLLEGE OF COMMERCE (W), RAWALPINDI|29|F|C\n373333|GOVT. ASSOCIATE COLLEGE, KHAYABAN-E-SIR SYED, RAWALPINDI|29|C|A\n373334|GOVT. ASSOCIATE COLLEGE, REHMATABAD, RAWALPINDI|29|C|A\n373335|GOVT. ASSOCIATE COLLEGE (W), KOTLI SATTIAN, RAWALPINDI|29|F|A\n373336|GOVT. ASSOCIATE COLLEGE (W), DHOKE SYEDAN, RAWALPINDI|29|F|A\n373337|GOVT. ASSOCIATE COLLEGE, DHOKE SYEDAN, RAWALPINDI|29|C|A\n373338|GOVT. ASSOCIATE COLLEGE, DHAMYAL, RAWALPINDI|29|C|A\n373339|GOVT. ASSOCIATE COLLEGE (W), DHAMYAL, RAWALPINDI|29|F|A\n373340|GOVT. ASSOCIATE COLLEGE (W), CHAK-BELI KHAN, RAWALPINDI|29|F|A\n373341|GOVT. ASSOCIATE COLLEGE (W), POLICE STATION ROAD SADDAR RAWALPINDI|29|F|A\n373342|GOVT. ASSOCIATE COLLEGE (W), JATHA HATHYAL, RAWALPINDI|29|F|A\n373401|GOVT. ASSOCIATE COLLEGE, TAXILA, RAWALPINDI|29|C|A\n373402|GOVT. ASSOCIATE COLLEGE (W), TAXILA, RAWALPINDI|29|F|A\n373403|GOVT. ASSOCIATE COLLEGE (W), WAH CANTT, RAWALPINDI|29|F|A\n373601|GOVT. ASSOCIATE COLLEGE, DAULTALA, RAWALPINDI|29|C|A\n373602|GOVT. SARWAR SHAHEED NISHAN E HAIDER ASSOCIATE COLLEGE, GUJAR KHAN, RAWALPINDI|29|C|A\n373603|GOVT. ASSOCIATE COLLEGE (W), DAULTALA, RAWALPINDI|29|F|A\n373604|GOVT. GRADUATE COLLEGE (W), GUJAR KHAN, RAWALPINDI|29|F|G\n373605|GOVT. ASSOCIATE COLLEGE OF COMMERCE, GUJAR KHAN, RAWALPINDI|29|C|C\n373606|GOVT. ASSOCIATE COLLEGE (W), MANGHOT, RAWALPINDI|29|F|A\n373607|GOVT. ASSOCIATE COLLEGE (W), KALARIALA, TEHSIL GUJJAR KHAN, RAWALPINDI|29|F|A\n373701|GOVT. ASSOCIATE COLLEGE (W), KALLAR SYEDAN, RAWALPINDI|29|F|A\n373702|GOVT. ASSOCIATE COLLEGE, KALLAR SYEDAN, RAWALPINDI|29|C|A\n373703|GOVT. ASSOCIATE COLLEGE (W), MANDRA, RAWALPINDI|29|F|A\n374101|GOVT. ASSOCIATE COLLEGE, PEER PHULLAHI, CHAKWAL|4|C|A\n374102|Chakwal College Of Arts & Science University Of Chakwal|4|C|A\n374103|GOVT. GRADUATE COLLEGE (W), CHAKWAL|4|F|G\n374104|GOVT. ASSOCIATE COLLEGE (W), DHUDIAL CHAKWAL|4|F|A\n374105|GOVT. ASSOCIATE COLLEGE (W), MULHAL MUGHLAN, CHAKWAL|4|F|A\n374106|GOVT. ASSOCIATE COLLEGE (W), BALKASSAR CHAKWAL|4|F|A\n374107|GOVT. ASSOCIATE COLLEGE (W), ARA BASHARAT CHOA SAIDAN SHAH CHAKWAL|4|F|A\n374108|GOVT. ASSOCIATE COLLEGE (W), TAMMAN, CHAKWAL|4|F|A\n374109|GOVT. ASSOCIATE COLLEGE (W), WANHAR BUCHAL KALAN, CHAKWAL|4|F|A\n374110|GOVT. ASSOCIATE COLLEGE (W), BHAUN, CHAKWAL|4|F|A\n374111|GOVT. ASSOCIATE COLLEGE (W), MULTAN KHURD, CHAKWAL|4|F|A\n374112|University of Chakwal|4|C|A\n374113|GOVT. GRADUATE COLLEGE OF COMMERCE, PINWAL ROAD, CHAKWAL|4|C|G\n374115|GOVT. ASSOCIATE COLLEGE (W), DHURNAL, CHAKWAL|4|F|A\n374116|GOVT. ASSOCIATE COLLEGE, CHOA SAIDAN SHAH, CHAKWAL|4|C|A\n374117|GOVT. ASSOCIATE COLLEGE (W), BHAGWAL, CHAKWAL|4|F|A\n374201|GOVT. GRADUATE COLLEGE, TALAGANG, CHAKWAL|4|C|G\n374202|GOVT. GRADUATE COLLEGE (W), TALAGANG, CHAKWAL|4|F|G\n374203|GOVT. ASSOCIATE COLLEGE, TARHADA, CHAKWAL|4|C|A\n374204|GOVT. ASSOCIATE COLLEGE OF COMMERCE, TALAGANG, CHAKWAL|4|C|C\n374213|Govt. Associate College For Boys Faisalabad Road Sargodha|4|M|A\n374301|GOVT. SIR SYED ASSOCIATE COLLEGE, KATAS, CHAKWAL|4|C|A\n374302|GOVT. ASSOCIATE COLLEGE (W), CHOA SAIDEN SHAH, CHAKWAL|4|F|A\n374401|GOVT. ASSOCIATE COLLEGE, BUCHAL KALAN, CHAKWAL|4|C|A\n374501|GOVT. ASSOCIATE COLLEGE (W), LAWA, CHAKWAL|4|F|A\n381101|GOVT. GRADUATE COLLEGE, BHAKKAR|3|C|G\n381102|GOVT. GRADUATE COLLEGE (W), BHAKKAR|3|F|G\n381103|GOVT. ASSOCIATE COLLEGE (W), MANKERA, BHAKKAR|3|F|A\n381104|GOVT. ASSOCIATE COLLEGE (W), BEHAL, BHAKKAR|3|F|A\n381105|GOVT. ASSOCIATE COLLEGE OF COMMERCE, BHAKKAR|3|C|C\n381108|GOVT. ASSOCIATE COLLEGE, 47/TDA, BHAKKAR|3|C|A\n381109|GOVT. ASSOCIATE COLLEGE (W), 47/TDA, BHAKKAR|3|F|A\n381110|GOVT. ASSOCIATE COLLEGE, BEHAL, BHAKKAR|3|C|A\n381111|GOVT. ASSOCIATE COLLEGE (W), 26/TDA, BHAKKAR|3|F|A\n381112|GOVT. ASSOCIATE COLLEGE (W), THAL, BHAKKAR|3|F|A\n381201|GOVT. GRADUATE COLLEGE, KALLUR KOT, BHAKKAR|3|C|G\n381202|GOVT. ASSOCIATE COLLEGE, JANDANWALA, BHAKKAR|3|C|A\n381203|GOVT. GRADUATE COLLEGE (W), KALLUR KOT, BHAKKAR|3|F|G\n381204|GOVT. ASSOCIATE COLLEGE (W), JANDAN WALA, BHAKKAR|3|F|A\n381205|GOVT. ASSOCIATE COLLEGE OF COMMERCE, KALLUR KOT, BHAKKAR|3|C|C\n381301|GOVT. ASSOCIATE COLLEGE, MANKERA, BHAKKAR|3|C|A\n381302|GOVT. ASSOCIATE COLLEGE OF COMMERCE, MANKERA, BHAKKAR|3|C|C\n381401|GOVT. ASSOCIATE COLLEGE (W), DARYA KHAN BHAKKAR|3|F|A\n381402|GOVT. GRADUATE COLLEGE, DARYA KHAN, BHAKKAR|3|C|G\n381403|GOVT. ASSOCIATE COLLEGE, DULLEWALA, BHAKKAR|3|C|A\n381404|GOVT. ASSOCIATE COLLEGE (W), DULLEWALA, BHAKKAR|3|F|A\n381405|GOVT. ASSOCIATE COLLEGE OF COMMERCE, DARYA KHAN, BHAKKAR|3|C|C\n382101|GOVT. GRADUATE COLLEGE, JAUHARABAD, KHUSHAB|15|C|G\n382102|GOVT. GRADUATE COLLEGE (W), JAUHARABAD, KHUSHAB|15|F|G\n382103|GOVT. ASSOCIATE COLLEGE, NAUSHERA, KHUSHAB|15|C|A\n382104|GOVT. ASSOCIATE COLLEGE, QUAIDABAD, KHUSHAB|15|C|A\n382105|GOVT. ASSOCIATE COLLEGE (W), QUAIDABAD, KHUSHAB|15|F|A\n382106|GOVT. ASSOCIATE COLLEGE (W), NEAR SABHRAL NAUSHERA, KHUSHAB|15|F|A\n382107|GOVT. GRADUATE COLLEGE (W), KHUSHAB|15|F|G\n382108|GOVT. ASSOCIATE COLLEGE (W), RANGPUR BHAGOOR, KHUSHAB|15|F|A\n382109|GOVT. ASSOCIATE COLLEGE OF COMMERCE, JAUHARABAD KHUSHAB|15|C|C\n382110|GOVT. ASSOCIATE COLLEGE OF COMMERCE, Y CROSS, NAUSHEHRA, KHUSHAB|15|C|C\n382112|GOVT. ASSOCIATE COLLEGE, RODA, KHUSHAB|15|C|A\n382113|GOVT. GRADUATE COLLEGE, 47 MB, KHUSHAB|15|C|G\n382114|GOVT. ASSOCIATE COLLEGE (W), 47 MB, KHUSHAB|15|F|A\n382115|GOVT. ASSOCIATE COLLEGE (W), KATHA SAGHRAL KHUSHAB|15|F|A\n382116|GOVT. ASSOCIATE COLLEGE (W), RODA, KHUSHAB|15|F|A\n382201|GOVT. GRADUATE COLLEGE, NOOR PUR THAL, KHUSHAB|15|C|G\n382202|GOVT. ASSOCIATE COLLEGE (W), NOOR PUR THAL, KHUSHAB|15|F|A\n382203|GOVT. ASSOCIATE COLLEGE OF COMMERCE, MADINA TOWN NOOR PUR THAL, KHUSHAB|15|C|C\n383101|GOVT. GRADUATE COLLEGE, ISA KHEL, MIANWALI|20|C|G\n383102|GOVT. ASSOCIATE COLLEGE (W), ISA KHEL, MIANWALI|20|F|A\n383103|GOVT. ASSOCIATE COLLEGE, KALABAGH, MIANWALI|20|C|A\n383104|GOVT. ASSOCIATE COLLEGE (W), KAMAR MUSHANI, MIANWALI|20|F|A\n383105|GOVT. ASSOCIATE COLLEGE OF COMMERCE, ISA KHEL, MIANWALI|20|C|C\n383201|GOVT. GRADUATE COLLEGE, MIANWALI|20|C|G\n383202|GOVT. GRADUATE COLLEGE (W), MIANWALI|20|F|G\n383203|GOVT. ASSOCIATE COLLEGE, KUNDIAN, MIANWALI|20|C|A\n383204|GOVT. ASSOCIATE COLLEGE, BAN HAFIZ JEE, MIANWALI|20|C|A\n383205|GOVT. GRADUATE COLLEGE (W), MUSA KHEL, MIANWALI|20|F|G\n383206|GOVT. GRADUATE COLLEGE (W), WAN BHACHRAN, MIANWALI|20|F|G\n383207|GOVT. ASSOCIATE COLLEGE (W), DAUD KHEL, MIANWALI|20|F|A\n383208|GOVT. ASSOCIATE COLLEGE OF COMMERCE (W), MIANWALI|20|F|C\n383209|GOVT. ASSOCIATE COLLEGE OF COMMERCE, MIANWALI|20|C|C\n383210|GOVT. ASSOCIATE COLLEGE (W), MOCH, MIANWALI|20|F|A\n383301|GOVT. GRADUATE COLLEGE, LIAQATABAD MIANWALI|20|C|G\n383302|GOVT. GRADUATE COLLEGE (W), LIAQUATABAD, MIANWALI|20|F|G\n383303|GOVT. ASSOCIATE COLLEGE (W), KUNDIAN, MIANWALI|20|F|A\n384101|GOVT. ASSOCIATE COLLEGE, BHERA, SARGODHA|31|C|A\n384102|GOVT. ASSOCIATE COLLEGE, MIANI, SARGODHA|31|C|A\n384103|GOVT. GRADUATE COLLEGE, BHALWAL, SARGODHA|31|C|G\n384104|GOVT. ASSOCIATE COLLEGE (W), PHULARWAN, SARGODHA|31|F|A\n384105|GOVT. GRADUATE COLLEGE (W), BHALWAL SARGODHA|31|F|G\n384106|GOVT. GRADUATE COLLEGE, KOT MOMIN, SARGODHA|31|C|G\n384107|GOVT. ASSOCIATE COLLEGE (W), KOT MOMIN SARGODHA|31|F|A\n384108|GOVT. GRADUATE COLLEGE, PHULLARWAN, SARGODHA|31|C|G\n384109|GOVT. ASSOCIATE COLLEGE OF COMMERCE, BHALWAL, SARGODHA|31|C|C\n384110|GOVT. ASSOCIATE COLLEGE, BHABRA, KOTMOMIN, SARGODHA|31|C|A\n384201|GOVT. ASSOCIATE COLLEGE, 75/SB, SARGODHA|31|C|A\n384202|GOVT. ASSOCIATE COLLEGE, CHAK NO. 90/SB, SARGODHA|31|C|A\n384203|GOVT. ASSOCIATE COLLEGE, BHAGTANWALA, SARGODHA|31|C|A\n384204|GOVT. AMBALA MUSLIM GRADUATE COLLEGE, SARGODHA|31|C|G\n384205|GOVT. ASSOCIATE COLLEGE (W), BLOCK NO. 23/A SARGODHA|31|F|A\n384206|GOVT. ASSOCIATE COLLEGE (W), CHAK 98/NB, SARGODHA|31|F|A\n384207|GOVT. ASSOCIATE COLLEGE (W), CHAK 75/SB, SARGODHA|31|F|A\n384208|GOVT. ASSOCIATE COLLEGE (W), CHAK NO. 36/SB, SARGODHA|31|F|A\n384209|GOVT. GRADUATE COLLEGE (W), BHAGTANWALA, SARGODHA|31|F|G\n384210|GOVT. GRADUATE COLLEGE (W), FAROOQ COLONY, SARGODHA|31|F|G\n384211|GOVT. GRADUATE COLLEGE (W), CHANDNI CHOWK, SARGODHA|31|F|G\n384213|GOVT. MIAN MUHAMMAD NAWAZ SHARIF ASSOCIATE COLLEGE, SARGODHA|31|C|A\n384214|GOVT. ASSOCIATE COLLEGE (W), BHERA, SARGODHA|31|F|A\n384215|GOVT. ASSOCIATE COLLEGE (W), MARI, SARGODHA|31|F|A\n384216|GOVT. ASSOCIATE COLLEGE OF COMMERCE (W), SARGODHA|31|F|C\n384217|GOVT. GRADUATE COLLEGE OF COMMERCE, SARGODHA|31|C|G\n384218|GOVT. ASSOCIATE COLLEGE OF COMMERCE, SAHIWAL, SARGODHA|31|C|C\n384220|GOVT. ASSOCIATE COLLEGE (W), MIANI, SARGODHA|31|F|A\n384221|GOVT. ASSOCIATE COLLEGE, SAHIWAL, SARGODHA|31|C|A\n384222|GOVT. ASSOCIATE COLLEGE (W), MELA MANDI, SARGODHA|31|F|A\n384301|GOVT. GRADUATE COLLEGE, SHAHPUR SADAR, SARGODHA|31|C|G\n384302|GOVT. GRADUATE COLLEGE (W), SHAHPUR, SARGODHA|31|F|G\n384303|GOVT. ASSOCIATE COLLEGE, JHAWARIAN, SARGODHA|31|C|A\n384304|GOVT. ASSOCIATE COLLEGE OF COMMERCE, SHAHPUR SADAR, SARGODHA|31|C|C\n384401|GOVT. GRADUATE COLLEGE, SILLANWALI, SARGODHA|31|C|G\n384402|GOVT. ASSOCIATE COLLEGE (W), SILLANWALI, SARGODHA|31|F|A\n384403|GOVT. ASSOCIATE COLLEGE OF COMMERCE, SILLANWALI, SARGODHA|31|C|C\n384501|GOVT. ASSOCIATE COLLEGE, FAROOQA, SAHIWAL SARGODHA|31|C|A\n384502|GOVT. GRADUATE COLLEGE (W), SAHIWAL, SARGODHA|31|F|G\n384503|GOVT. GRADUATE COLLEGE (W), FAROOQA, SARGODHA|31|F|G\n393101|GOVT. ASSOCIATE COLLEGE, DEPALPUR, OKARA|25|C|A\n393102|GOVT. ASSOCIATE COLLEGE, HUJRA SHAH MUQEEM, OKARA|25|C|A\n393103|GOVT. ASSOCIATE COLLEGE, HAVELI LAKHA, OKARA|25|C|A\n393104|GOVT. ASSOCIATE COLLEGE, GOGERA, OKARA|25|C|A\n393105|GOVT. ASSOCIATE COLLEGE, BASIRPUR, OKARA|25|C|A\n393106|GOVT. GRADUATE COLLEGE (W), DEPALPUR, OKARA|25|F|G\n393107|GOVT. ASSOCIATE COLLEGE (W), HAVELI LAKHA, OKARA|25|F|A\n393108|GOVT. ASSOCIATE COLLEGE (W), HUJRA SHAH MUQEEM, OKARA|25|F|A\n393109|GOVT. ASSOCIATE COLLEGE (W), BASIRPUR, OKARA|25|F|A\n393110|GOVT. ASSOCIATE COLLEGE OF COMMERCE, DEPALPUR, OKARA|25|C|C\n393201|GOVT. GRADUATE COLLEGE, OKARA|25|C|G\n393202|GOVT. GRADUATE COLLEGE (W), OKARA|25|F|G\n393203|GOVT. GRADUATE COLLEGE (W), SOUTH CITY, OKARA|25|F|G\n393204|GOVT. ASSOCIATE COLLEGE (W), RENALA KHURD, OKARA|25|F|A\n393205|GOVT. ASSOCIATE COLLEGE, RENALA KHURD OKARA|25|C|A\n393206|GOVT. ASSOCIATE COLLEGE OF COMMERCE, OKARA|25|C|C\n393208|GOVT. GRADUATE COLLEGE (W), GOGERA, OKARA|25|F|G\n393209|GOVT. GRADUATE COLLEGE (W), CHAK 36/4-L, MALGADHA CHOWK, OKARA|25|F|G\n397101|GOVT. GRADUATE COLLEGE, CHICHAWATNI, SAHIWAL|30|C|G\n397102|GOVT. CRESCENT GRADUATE COLLEGE (W), CHICHAWATNI, SAHIWAL|30|F|G\n397103|GOVT. GRADUATE COLLEGE OF COMMERCE, G.T ROAD CHICHAWATNI, SAHIWAL|30|C|G\n397104|GOVT. ASSOCIATE COLLEGE, OKANWALA BANGLA CHICHAWATNI, SAHIWAL|30|C|A\n397201|GOVT. IMAMIA ASSOCIATE COLLEGE, SAHIWAL|30|C|A\n397202|GOVT. GRADUATE COLLEGE, SAHIWAL|30|C|G\n397203|GOVT. GRADUATE COLLEGE (W), SAHIWAL|30|F|G\n397204|GOVT. ASSOCIATE COLLEGE (W), HARAPPA, SAHIWAL|30|F|A\n397205|GOVT. GRADUATE COLLEGE OF COMMERCE, SAHIWAL|30|C|G\n397206|GOVT. ASSOCIATE COLLEGE OF COMMERCE (W), TBZ SAHIWAL|30|F|C\n397208|GOVT. GRADUATE COLLEGE (W), FARID TOWN, SAHIWAL|30|F|G\n397209|GOVT. ASSOCIATE COLLEGE (W), KAMEER TOWN, SAHIWAL|30|F|A\n397210|GOVT. ASSOCIATE COLLEGE, KAMEER TOWN, SAHIWAL|30|C|A\n397211|GOVT. ASSOCIATE COLLEGE (W), 90-MORE, CHICHAWATNI, SAHIWAL|30|F|A\n398101|GOVT. GRADUATE COLLEGE, ARIFWALA, PAKPATTAN|26|C|G\n398102|GOVT. GRADUATE COLLEGE (W), ARIF WALA, PAKPATTAN|26|F|G\n398103|GOVT. ASSOCIATE COLLEGE OF COMMERCE, PAKPATTAN|26|C|C\n398105|GOVT. ASSOCIATE COLLEGE, KALIYANA PAKPATTAN|26|C|A\n398201|GOVT. FARIDIA GRADUATE COLLEGE, PAKPATTAN|26|C|G\n398202|GOVT. GRADUATE COLLEGE (W), PAKPATTAN|26|F|G\n398203|GOVT. ASSOCIATE COLLEGE OF COMMERCE, ARIFWALA, PAKPATTAN|26|C|C\n398204|GOVT. ASSOCIATE COLLEGE, NOOR PUR, PAKPATTAN|26|C|A\n398205|GOVT. ASSOCIATE COLLEGE (W), NOOR PUR, PAKPATTAN|26|F|A";
+/*SEED-END*/
+const GENDERS={F:"Women",M:"Men",C:"Co-education"}, CTYPES={G:"Graduate / Post Graduate",A:"Associate",C:"Commerce"};
+function seedUnits(){
+  return SEED_COLLEGES.split("\n").map(l=>{const[e,name,di,g,t]=l.split("|"),d=SEED_DISTS[+di];
+    return {id:e,emis:e,name,division:DIVISIONS[d[1]],district:d[0],gender:GENDERS[g]||"",ctype:CTYPES[t]||"",members:0,contacted:0,support:"",rep:"",phone:"",lastVisit:"",notes:"",updatedAt:""}});
+}
+// Adds directory colleges that are missing. Never touches a unit already on this device, or one deleted on purpose.
+function loadDirectory(){
+  const have=new Set(), byName=new Set();
+  for(const u of S.units){have.add(u.id);if(u.emis)have.add(String(u.emis));byName.add(norm(u.name)+"|"+u.division)}
+  let added=0;
+  for(const u of seedUnits()){if(have.has(u.id)||byName.has(norm(u.name)+"|"+u.division)||S.deleted["units/"+u.id])continue;S.units.push(u);added++}
+  return added;
+}
+
+const S={units:[],acts:[],team:[],contests:[],results:[],cfg:{},deleted:{},tab:"punjab",div:"Rawalpindi",rview:"tally",enterUnit:"",enterDiv:"",uLimit:40,readOnly:false};
+/* ---------- local store (this browser) ---------- */
+const KEY="ppla.campaign.v1";
+let storageOK=true, freshDevice=false, dataVer=0;
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+function persist(){dataVer++;try{localStorage.setItem(KEY,JSON.stringify({units:S.units,acts:S.acts,team:S.team,contests:S.contests,results:S.results,cfg:S.cfg,deleted:S.deleted,savedAt:new Date().toISOString()}));}catch(e){storageOK=false;$("offline").hidden=false}}
+function loadLocal(){try{const raw=localStorage.getItem(KEY);if(!raw){freshDevice=true;return}const d=JSON.parse(raw);S.units=d.units||[];S.acts=d.acts||[];S.team=d.team||[];S.contests=d.contests||[];S.results=d.results||[];S.cfg=d.cfg||{};S.deleted=d.deleted||{}}catch(e){storageOK=false;$("offline").hidden=false}}
+const COLKEY={units:"units",activities:"acts",team:"team",contests:"contests",results:"results"};
+const AB=window.AndroidBridge||null; // present only inside the Android app
+function download(name,text,type){
+  if(AB){const p=AB.saveFile(name,type.split(";")[0],text);toast(p?"Saved to "+p:"Couldn't save the file");return}
+  const blob=new Blob([text],{type});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);
+  toast("Saved to your downloads");
+}
+function sendFile(name,text,type){
+  if(AB){AB.shareFile(name,type,text);return true}
+  try{const f=new File([text],name,{type});if(navigator.canShare&&navigator.canShare({files:[f]})){navigator.share({files:[f],title:name}).catch(()=>{});return true}}catch(e){}
+  return false;
+}
+const canSendFiles=(()=>{if(AB)return true;try{return !!(navigator.canShare&&navigator.canShare({files:[new File(["{}"],"x.json",{type:"application/json"})]}))}catch(e){return false}})();
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const todayStr=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
+const dayDiff=(a,b)=>Math.round((new Date(a+"T00:00:00")-new Date(b+"T00:00:00"))/864e5);
+const MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const fmtDate=d=>{if(!d)return"";const [y,m,dd]=d.split("-");return +dd+" "+MON[+m-1]+" "+y};
+const pct=(a,b)=>b?Math.round(a*100/b):0;
+const n=v=>{const x=Number(v);return isFinite(x)&&x>0?x:0};
+
+function toast(msg){const t=$("toast");t.textContent=msg;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>t.hidden=true,2600)}
+
+/* ---------- options ---------- */
+function fillSelect(el,opts,first){el.innerHTML=(first?`<option value="">${esc(first)}</option>`:"")+opts.map(o=>Array.isArray(o)?`<option value="${esc(o[0])}">${esc(o[1])}</option>`:`<option>${esc(o)}</option>`).join("")}
+fillSelect($("uDiv"),DIVISIONS,"All divisions");
+fillSelect($("aDiv"),DIVISIONS,"All divisions");
+fillSelect($("tDiv"),DIVISIONS,"All divisions");
+fillSelect($("uSup"),[...SUPPORT.map(s=>[s[0],s[1]]),["none","Not assessed"]],"All support levels");
+const districtsOf=div=>[...new Set(S.units.filter(u=>!div||u.division===div).map(u=>(u.district||"").trim()).filter(Boolean))].sort();
+// District list follows the chosen division; keeps the current pick if it is still valid.
+function fillDistricts(){const el=$("uDist"),cur=el.value,list=districtsOf($("uDiv").value);fillSelect(el,list,"All districts");el.value=list.includes(cur)?cur:"";
+  const all=districtsOf("");if(all.length!==fillDistricts.n){fillDistricts.n=all.length;$("distList").innerHTML=all.map(d=>`<option value="${esc(d)}">`).join("")}}
+$("legend").innerHTML=SUPPORT.map(s=>`<span><i class="${s[2]}"></i>${s[1]}</span>`).join("")+`<span><i class="c-none"></i>Not assessed</span>`;
+
+/* ---------- aggregates ---------- */
+function lastContact(u){
+  let last=u.lastVisit||"";
+  for(const a of S.acts){if(a.unitId===u.id&&a.status==="done"&&a.date&&a.date>last)last=a.date}
+  return last;
+}
+function agg(units){
+  const r={units:units.length,voters:0,contacted:0,sup:{strong:0,lean:0,undec:0,opp:0,none:0}};
+  for(const u of units){const v=n(u.members);r.voters+=v;r.contacted+=Math.min(n(u.contacted),v||n(u.contacted));(r.sup[u.support]!==undefined?r.sup[u.support]+=v||0:r.sup.none+=v)}
+  return r;
+}
+function supBar(el,a){
+  const tot=a.voters;
+  if(!tot){el.innerHTML=`<span class="c-none" style="width:100%"></span>`;return}
+  el.innerHTML=[...SUPPORT.map(s=>[s[2],a.sup[s[0]]]),["c-none",a.sup.none]].filter(x=>x[1]>0).map(x=>`<span class="${x[0]}" style="width:${(x[1]*100/tot).toFixed(2)}%" title="${x[1]} voters"></span>`).join("");
+}
+function kpis(el,items){el.innerHTML=items.map(k=>`<div class="kpi"><span class="lbl">${esc(k[0])}</span><span class="num">${esc(k[1])}</span>${k[2]?`<span class="sub">${esc(k[2])}</span>`:""}</div>`).join("")}
+
+function actRow(a){
+  const d=a.date?a.date.split("-"):null;
+  const unit=a.unitId?S.units.find(u=>u.id===a.unitId):null;
+  const where=a.level==="centre"?"Punjab":[unit?unit.name:"",a.division].filter(Boolean).join(", ");
+  const done=a.status==="done";
+  return `<div class="row">
+    <div class="datebox">${d?`<b>${+d[2]}</b><small>${MON[+d[1]-1]}</small>`:`<b>–</b><small>TBD</small>`}</div>
+    <div style="min-width:0"><div class="t">${esc(a.title||a.type||"Outreach")}</div>
+      <div class="m"><span class="pill p-${esc(a.level)}">${esc(LEVELS[a.level]||"")}</span> ${esc(a.type||"")}${where?" · "+esc(where):""}${a.owner?" · "+esc(a.owner):""}${done&&n(a.reached)?" · reached "+n(a.reached):""}</div></div>
+    <div class="btnrow">${a.status==="planned"&&!S.readOnly?`<button class="btn small" data-done="${esc(a.id)}" type="button">Mark done</button>`:`<span class="pill p-${esc(a.status)}">${esc(a.status)}</span>`}<button class="btn small" data-edit-act="${esc(a.id)}" type="button" aria-label="Edit">Edit</button></div>
+  </div>`;
+}
+/* ---------- campaign helpers: WhatsApp links, priority targets, daily brief ---------- */
+// Pakistani mobile numbers to WhatsApp's international form: 0300-1234567 -> 923001234567
+function waNumber(p){let d=String(p||"").replace(/\D/g,"");if(d.startsWith("00"))d=d.slice(2);if(d.length===11&&d.startsWith("0"))d="92"+d.slice(1);else if(d.length===10&&d.startsWith("3"))d="92"+d;return d.length>=11?d:""}
+const waLink=(p,text)=>{const w=waNumber(p);return w?"https://wa.me/"+w+(text?"?text="+encodeURIComponent(text):""):""};
+function priorityList(units,days){
+  const t=todayStr();
+  return units.filter(u=>!["strong","opp"].includes(u.support)).map(u=>({u,l:lastContact(u)})).filter(x=>!x.l||dayDiff(t,x.l)>=(days||7))
+    .sort((a,b)=>n(b.u.members)-n(a.u.members)||(a.l||"").localeCompare(b.l||"")||a.u.name.localeCompare(b.u.name));
+}
+function priorityRow(x){const u=x.u,s=SUPMAP[u.support],wa=waLink(u.phone);
+  return `<div class="row"><div class="datebox"><b>${n(u.members)||"–"}</b><small>voters</small></div>
+    <div style="min-width:0"><div class="t">${esc(u.name)}</div><div class="m">${esc(u.district||u.division)} · ${s?esc(s[1]):"Not assessed"} · ${x.l?"last contact "+esc(fmtDate(x.l)):"never contacted"}${u.rep?" · Rep: "+esc(u.rep):""}</div></div>
+    <div class="btnrow">${wa?`<a class="btn small" href="${esc(wa)}" target="_blank" rel="noopener">WhatsApp</a>`:""}<button class="btn small" data-plan-unit="${esc(u.id)}" type="button">Plan visit</button></div></div>`}
+function briefText(div){
+  const us=div?S.units.filter(u=>u.division===div):S.units, a=agg(us), t=todayStr(), fav=a.sup.strong+a.sup.lean, reps=us.filter(unitCovered()).length;
+  const L=[`*${panelName()} · daily brief${div?" · "+div+" Division":" · Punjab"}*`,fmtDate(t)+(S.cfg.pollDate?` · ${Math.max(0,dayDiff(S.cfg.pollDate,t))} days to polling`:"")];
+  L.push("",`Units: ${us.length} · unit coordinators in place ${reps} (${pct(reps,us.length)}%)`);
+  if(a.voters){const maj=Math.floor(a.voters/2)+1;
+    L.push(`Voters entered: ${a.voters.toLocaleString()} · contacted ${pct(a.contacted,a.voters)}% · favourable ${pct(fav,a.voters)}%`,
+      fav>=maj?`Majority mark ${maj.toLocaleString()}: reached on paper (${fav.toLocaleString()} favourable)`:`Majority mark ${maj.toLocaleString()}: ${(maj-fav).toLocaleString()} favourable votes short`)}
+  else L.push("Faculty strength not entered yet for any unit.");
+  const today=S.acts.filter(x=>x.status==="planned"&&x.date===t&&(!div||x.division===div));
+  L.push("",`*Today's outreach (${today.length})*`);
+  if(today.length)today.slice(0,8).forEach(x=>{const u=x.unitId?S.units.find(v=>v.id===x.unitId):null;L.push(`• ${x.title||x.type}${u?" — "+u.name:""}${x.owner?" ("+x.owner+")":""}`)});else L.push("• Nothing planned for today");
+  const pr=priorityList(us).slice(0,5);
+  if(pr.length){L.push("","*Priority targets*");pr.forEach((x,i)=>L.push(`${i+1}. ${x.u.name}${n(x.u.members)?` — ${n(x.u.members)} voters`:""}, ${(SUPMAP[x.u.support]||["","not assessed"])[1].toLowerCase()}, ${x.l?"last contact "+fmtDate(x.l):"never contacted"}`))}
+  if(!div){const lag=DIVISIONS.map(d=>({d,g:agg(S.units.filter(u=>u.division===d))})).filter(x=>x.g.units).sort((x,y)=>pct(x.g.contacted,x.g.voters)-pct(y.g.contacted,y.g.voters)||y.g.units-x.g.units).slice(0,3);
+    if(lag.length){L.push("","*Divisions needing a push*");lag.forEach(x=>L.push(`• ${x.d}: ${pct(x.g.contacted,x.g.voters)}% contacted, ${x.g.units} units`))}}
+  L.push("",`🔥 Vote for the Torch (مشعل) · ${COALITION}`);
+  return L.join("\n");
+}
+function emptyBox(title,body,btn){return `<div class="empty"><b>${esc(title)}</b><span>${esc(body)}</span>${btn&&!S.readOnly?`<button class="btn small primary" data-add="${btn[0]}" type="button">${esc(btn[1])}</button>`:""}</div>`}
+
+/* ---------- render: Punjab ---------- */
+function renderPunjab(){
+  const a=agg(S.units), t=todayStr();
+  const done=S.acts.filter(x=>x.status==="done");
+  const reached=done.reduce((s,x)=>s+n(x.reached),0);
+  const fav=a.sup.strong+a.sup.lean, maj=Math.floor(a.voters/2)+1, reps=S.units.filter(unitCovered()).length;
+  kpis($("pKpis"),[
+    ["Units registered",a.units,DIVISIONS.filter(d=>S.units.some(u=>u.division===d)).length+" of "+DIVISIONS.length+" divisions"],
+    ["Unit coordinators in place",pct(reps,a.units)+"%",reps+" of "+a.units+" units"],
+    ["Voters (faculty)",a.voters.toLocaleString(),a.voters?S.units.filter(u=>n(u.members)).length+" units with strength entered":"enter faculty strength per unit"],
+    ["Contacted",pct(a.contacted,a.voters)+"%",a.contacted.toLocaleString()+" teachers"],
+    ["Favourable",pct(fav,a.voters)+"%",!a.voters?"strong + leaning":fav>=maj?"majority reached on paper":(maj-fav).toLocaleString()+" short of a majority"],
+    ["Outreach done",done.length,reached?reached.toLocaleString()+" people reached":"log the first one"],
+  ]);
+  supBar($("pBar"),a);
+  $("pBarNote").textContent=a.voters?`Weighted by faculty strength. ${a.sup.none.toLocaleString()} voters sit in units not yet assessed.`:"Add units with their faculty strength to see the support picture.";
+
+  const rows=DIVISIONS.map(d=>{
+    const us=S.units.filter(u=>u.division===d), g=agg(us);
+    const coord=S.team.find(m=>m.division===d&&m.role==="Divisional coordinator");
+    const acts=S.acts.filter(x=>x.division===d&&x.status==="done").map(x=>x.date).filter(Boolean).sort();
+    return {d,g,coord,last:acts[acts.length-1]};
+  });
+  $("divTable").innerHTML=`<thead><tr><th>Division</th><th class="r">Units</th><th class="r">Voters</th><th>Contacted</th><th class="r">Favourable</th><th>Coordinator</th><th>Last outreach</th></tr></thead><tbody>`+
+    rows.map(r=>`<tr class="click" data-div="${esc(r.d)}" tabindex="0"><td><b>${esc(r.d)}</b></td><td class="r">${r.g.units}</td><td class="r">${r.g.voters.toLocaleString()}</td>
+      <td><div class="cov"><div class="track"><div class="fill" style="width:${pct(r.g.contacted,r.g.voters)}%"></div></div><span>${pct(r.g.contacted,r.g.voters)}%</span></div></td>
+      <td class="r">${r.g.voters?pct(r.g.sup.strong+r.g.sup.lean,r.g.voters)+"%":"–"}</td>
+      <td>${r.coord?esc(r.coord.name):'<span class="stale">Not assigned</span>'}</td><td>${r.last?esc(fmtDate(r.last)):"–"}</td></tr>`).join("")+"</tbody>";
+
+  const pr=priorityList(S.units);
+  $("pPriority").innerHTML=pr.length?pr.slice(0,8).map(priorityRow).join(""):`<div class="note">No priority targets right now: every undecided or leaning unit has had contact in the last week.</div>`;
+
+  const up=S.acts.filter(x=>x.status==="planned"&&x.date&&x.date>=t&&dayDiff(x.date,t)<=14).sort((x,y)=>x.date.localeCompare(y.date));
+  $("pUpcoming").innerHTML=up.length?up.slice(0,8).map(actRow).join(""):emptyBox("Nothing scheduled","Plan visits, staff-room meetings and conventions for the next two weeks.",["activity","Plan outreach"]);
+
+  const stale=S.units.map(u=>({u,l:lastContact(u)})).filter(x=>!x.l||dayDiff(t,x.l)>=21).sort((x,y)=>n(y.u.members)-n(x.u.members));
+  $("pStale").innerHTML=!S.units.length?emptyBox("No units yet","Register each college as a unit with its faculty strength and unit rep.",["unit","Add unit"]):
+    stale.length?stale.slice(0,8).map(x=>`<div class="row"><div class="datebox"><b>${n(x.u.members)||"–"}</b><small>voters</small></div><div style="min-width:0"><div class="t">${esc(x.u.name)}</div><div class="m">${esc(x.u.division)} · ${x.l?"last contact "+esc(fmtDate(x.l)):"never contacted"}</div></div><button class="btn small" data-plan-unit="${esc(x.u.id)}" type="button">Plan visit</button></div>`).join(""):
+    `<div class="empty"><b>Every unit contacted recently</b><span>All units have had contact in the last three weeks.</span></div>`;
+}
+
+/* ---------- render: Division ---------- */
+function renderDivision(){
+  const d=S.div;
+  $("divChips").innerHTML=DIVISIONS.map(x=>`<button class="chip" data-divchip="${esc(x)}" aria-pressed="${x===d}" type="button">${esc(x)}</button>`).join("");
+  $("dTitle").textContent=d+" Division";
+  const us=S.units.filter(u=>u.division===d), g=agg(us);
+  const acts=S.acts.filter(x=>x.division===d);
+  kpis($("dKpis"),[["Units",g.units],["Voters",g.voters.toLocaleString()],["Contacted",pct(g.contacted,g.voters)+"%"],["Favourable",g.voters?pct(g.sup.strong+g.sup.lean,g.voters)+"%":"–"],["Outreach",acts.filter(x=>x.status==="done").length+" done",acts.filter(x=>x.status==="planned").length+" planned"]]);
+  supBar($("dBar"),g);
+  const dists=districtsOf(d), cov=unitCovered();
+  $("dDists").innerHTML=!dists.length?`<tbody><tr><td class="note">No districts yet. Add units with their district.</td></tr></tbody>`:
+    `<thead><tr><th>District</th><th class="r">Colleges</th><th class="r">Reps</th><th class="r">Voters</th><th>Contacted</th><th class="r">Favourable</th><th>District coordinator</th></tr></thead><tbody>`+
+    dists.map(ds=>{const du=us.filter(u=>(u.district||"").trim()===ds),dg=agg(du),reps=du.filter(cov).length;
+      const co=S.team.find(m=>m.role==="District coordinator"&&m.division===d&&norm(m.district)===norm(ds));
+      return `<tr class="click" data-dist="${esc(ds)}" tabindex="0"><td><b>${esc(ds)}</b></td><td class="r">${dg.units}</td><td class="r">${reps}/${dg.units}</td><td class="r">${dg.voters.toLocaleString()}</td>
+      <td><div class="cov"><div class="track"><div class="fill" style="width:${pct(dg.contacted,dg.voters)}%"></div></div><span>${pct(dg.contacted,dg.voters)}%</span></div></td>
+      <td class="r">${dg.voters?pct(dg.sup.strong+dg.sup.lean,dg.voters)+"%":"–"}</td><td>${co?esc(co.name):'<span class="stale">Not assigned</span>'}</td></tr>`}).join("")+"</tbody>";
+  const pr=priorityList(us);
+  $("dPriority").innerHTML=pr.length?pr.slice(0,6).map(priorityRow).join(""):`<div class="note">No priority targets in ${esc(d)} right now.</div>`;
+  const tm=S.team.filter(m=>m.division===d).sort((a,b)=>ROLES.indexOf(a.role)-ROLES.indexOf(b.role));
+  $("dTeam").innerHTML=tm.length?tm.map(memberRow).join(""):emptyBox("No one assigned","Add a divisional coordinator and unit reps for "+d+".",["member","Add member"]);
+  const sorted=acts.slice().sort((a,b)=>(b.date||"").localeCompare(a.date||""));
+  $("dActs").innerHTML=sorted.length?sorted.slice(0,10).map(actRow).join(""):emptyBox("No outreach logged","Record visits and meetings held in this division.",["activity","Plan outreach"]);
+  $("dUnits").innerHTML=us.length?unitTable(us):`<tbody><tr><td>${emptyBox("No units in "+d,"Add the colleges in this division with their faculty strength.",["unit","Add unit"])}</td></tr></tbody>`;
+}
+function unitTable(us){
+  const t=todayStr();
+  return `<thead><tr><th>College</th><th>District</th><th class="r">Voters</th><th>Contacted</th><th>Support</th><th>Unit rep</th><th>Last contact</th></tr></thead><tbody>`+
+  us.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(u=>{const l=lastContact(u),s=SUPMAP[u.support];return `<tr class="click" data-edit-unit="${esc(u.id)}" tabindex="0"><td><b>${esc(u.name)}</b></td><td>${esc(u.district)}</td><td class="r">${n(u.members)}</td>
+  <td><div class="cov"><div class="track"><div class="fill" style="width:${pct(n(u.contacted),n(u.members))}%"></div></div><span>${n(u.contacted)}/${n(u.members)}</span></div></td>
+  <td>${s?`<span class="sup"><i class="${s[2]}"></i>${esc(s[1])}</span>`:'<span class="note">Not assessed</span>'}</td><td>${esc(u.rep)}</td>
+  <td>${l?`<span class="${dayDiff(t,l)>=21?"stale":""}">${esc(fmtDate(l))}</span>`:'<span class="stale">Never</span>'}</td></tr>`}).join("")+"</tbody>";
+}
+
+/* ---------- render: Units ---------- */
+function renderUnits(){
+  fillDistricts();
+  const q=$("uSearch").value.trim().toLowerCase(), dv=$("uDiv").value, ds=$("uDist").value, sp=$("uSup").value, fl=$("uFlag").value, t=todayStr();
+  const list=S.units.filter(u=>(!dv||u.division===dv)&&(!ds||(u.district||"").trim()===ds)&&(!sp||(sp==="none"?!SUPMAP[u.support]:u.support===sp))
+    &&(!fl||(fl==="norep"?!u.rep:fl==="never"?!lastContact(u):!n(u.members)))
+    &&(!q||[u.name,u.district,u.rep,u.division,u.emis].join(" ").toLowerCase().includes(q))).sort((a,b)=>a.division.localeCompare(b.division)||a.name.localeCompare(b.name));
+  $("btnExport").hidden=!S.units.length;
+  $("uMore").hidden=true;$("uCount").textContent="";
+  if(!S.units.length){$("uCards").innerHTML=emptyBox("No college units registered","Each government college is one unit. Add its name, district, division, faculty strength and the unit representative, or load the Punjab colleges directory from the Data tab.",["unit","Add the first unit"]);return}
+  if(!list.length){$("uCards").innerHTML=`<div class="empty"><b>No units match</b><span>Try a different search or clear the filters.</span></div>`;return}
+  const shown=list.slice(0,S.uLimit);
+  $("uCount").textContent=list.length===S.units.length?`${list.length} colleges`:`${list.length} of ${S.units.length} colleges match`;
+  if(list.length>shown.length){$("uMore").hidden=false;$("uMore").textContent=`Show more colleges (showing ${shown.length} of ${list.length})`}
+  $("uCards").innerHTML=shown.map(u=>{const s=SUPMAP[u.support],l=lastContact(u),stale=!l||dayDiff(t,l)>=21;
+    return `<button class="ucard" data-edit-unit="${esc(u.id)}" type="button">
+      <span class="nm">${esc(u.name)}</span>
+      <span class="meta">${esc([u.district,u.division].filter(Boolean).join(" · "))}${u.emis?" · EMIS "+esc(u.emis):""}${u.rep?" · Rep: "+esc(u.rep):'<span class="stale"> · No rep</span>'}</span>
+      <span class="cov"><span class="track"><span class="fill" style="display:block;width:${pct(n(u.contacted),n(u.members))}%"></span></span><span class="note">${n(u.contacted)}/${n(u.members)} contacted</span></span>
+      <span class="foot">${s?`<span class="sup"><i class="${s[2]}"></i>${esc(s[1])}</span>`:'<span class="note">Not assessed</span>'}<span class="note ${stale?"stale":""}">${l?"Last contact "+esc(fmtDate(l)):"Never contacted"}</span></span>
+    </button>`}).join("");
+}
+
+/* ---------- render: Activities ---------- */
+function renderActs(){
+  const lv=$("aLevel").value, dv=$("aDiv").value, st=$("aStatus").value, t=todayStr();
+  const list=S.acts.filter(a=>(!lv||a.level===lv)&&(!dv||a.division===dv)&&(!st||a.status===st));
+  const up=list.filter(a=>a.status==="planned"&&(!a.date||a.date>=t)).sort((a,b)=>(a.date||"9").localeCompare(b.date||"9"));
+  const past=list.filter(a=>!up.includes(a)).sort((a,b)=>(b.date||"").localeCompare(a.date||""));
+  $("aUp").innerHTML=up.length?up.map(actRow).join(""):emptyBox(S.acts.length?"Nothing upcoming in this view":"No outreach planned yet","Unit visits, divisional conventions and central rallies all go here.",["activity","Plan outreach"]);
+  $("aPast").innerHTML=past.length?past.map(actRow).join(""):`<div class="note">Completed outreach and anything overdue shows here.</div>`;
+}
+
+/* ---------- render: Team ---------- */
+const LVL_TAG={centre:"PB",division:"DIV",district:"DIST",unit:"UNIT"};
+function memberRow(m){const u=m.unitId?S.units.find(x=>x.id===m.unitId):null,wa=waLink(m.phone);
+  return `<div class="row"><div class="datebox"><b>${esc((m.name||"?").trim().charAt(0).toUpperCase())}</b><small>${esc(LVL_TAG[m.level]||"UNIT")}</small></div>
+  <div style="min-width:0"><div class="t">${esc(m.name)}</div><div class="m">${esc(m.role)}${m.focus?" ("+esc(m.focus)+")":""}${u?" · "+esc(u.name):""}${m.unit?" · "+esc(m.unit):""}${m.district&&m.level!=="centre"?" · "+esc(m.district):""}${m.division&&m.level!=="centre"?" · "+esc(m.division):""}${m.phone?" · "+esc(m.phone):""}</div></div>
+  <div class="btnrow">${wa?`<a class="btn small" href="${esc(wa)}" target="_blank" rel="noopener">WhatsApp</a>`:""}<button class="btn small" data-edit-member="${esc(m.id)}" type="button">Edit</button></div></div>`}
+// A unit counts as covered when it has a rep on its card or a unit coordinator/representative linked to it.
+function unitCovered(){const set=new Set(S.team.filter(m=>m.unitId&&UNIT_ROLES.includes(m.role)).map(m=>m.unitId));return u=>!!u.rep||set.has(u.id)}
+const assignBtn=(label,pre)=>`<button class="btn small" data-assign="${esc(JSON.stringify(pre))}" type="button">${esc(label)}</button>`;
+function renderTeam(){
+  const covered=unitCovered(), q=($("tSearch").value||"").trim().toLowerCase(), tdv=$("tDiv").value;
+  // coverage of the coordinator structure: every division, district and unit should have a named person
+  const divCo=new Set(S.team.filter(m=>m.role==="Divisional coordinator").map(m=>m.division));
+  const distCo=new Set(S.team.filter(m=>m.role==="District coordinator").map(m=>m.division+"|"+norm(m.district)));
+  const allDists=DIVISIONS.flatMap(d=>districtsOf(d).map(ds=>({d,ds})));
+  const noDiv=DIVISIONS.filter(d=>!divCo.has(d)), noDist=allDists.filter(x=>!distCo.has(x.d+"|"+norm(x.ds)));
+  const unitsIn=S.units.filter(u=>!tdv||u.division===tdv), unitsCov=unitsIn.filter(covered).length;
+  const focal=S.team.filter(m=>m.role==="Focal person");
+  kpis($("tKpis"),[
+    ["Divisional coordinators",(DIVISIONS.length-noDiv.length)+" / "+DIVISIONS.length,noDiv.length?noDiv.length+" divisions open":"all divisions covered"],
+    ["District coordinators",(allDists.length-noDist.length)+" / "+allDists.length,noDist.length?noDist.length+" districts open":"all districts covered"],
+    ["Unit coordinators",unitsCov+" / "+unitsIn.length,pct(unitsCov,unitsIn.length)+"% of colleges"+(tdv?" in "+tdv:"")],
+    ["Focal persons",focal.length,(k=>k+(k===1?" responsibility":" responsibilities")+" covered")(new Set(focal.map(m=>m.focus).filter(Boolean)).size)],
+  ]);
+  const gapDiv=noDiv.filter(d=>!tdv||d===tdv), gapDist=noDist.filter(x=>!tdv||x.d===tdv);
+  $("tGaps").innerHTML=!gapDiv.length&&!gapDist.length?`<div class="okline">Every ${tdv?"post in "+esc(tdv):"division and district"} has a coordinator.</div>`:
+    (gapDiv.length?`<div class="note"><b>Divisions without a coordinator</b> (tap to assign)</div><div class="btnrow">${gapDiv.map(d=>assignBtn(d,{role:"Divisional coordinator",level:"division",division:d})).join("")}</div>`:"")+
+    (gapDist.length?`<div class="note"><b>Districts without a coordinator</b> (tap to assign)</div><div class="btnrow">${gapDist.map(x=>assignBtn(x.ds+(tdv?"":" · "+x.d),{role:"District coordinator",level:"district",division:x.d,district:x.ds})).join("")}</div>`:"");
+  // our candidates, from Results > Posts & candidates
+  const ours=S.contests.map(c=>({c,k:(c.candidates||[]).filter(isOurs)})).sort((a,b)=>cmpContest(a.c,b.c))
+    .filter(x=>!tdv||x.c.scope==="centre"||x.c.division===tdv||(x.c.scope==="unit"&&(S.units.find(u=>u.id===x.c.unitId)||{}).division===tdv));
+  $("tCands").innerHTML=!S.contests.length?`<div class="empty"><b>No posts set up yet</b><span>Add each post with its seats and candidates. Write our candidates' panel as "Nawa-e-Asatza", "Ittehad-e-Asatza" or "Torch" so they are picked out.</span><button class="btn small primary" data-rgo-tab="setup" type="button">Set up posts &amp; candidates</button></div>`:
+    `<div class="tscroll"><table><thead><tr><th>Post</th><th>Who votes</th><th class="r">Seats</th><th>Our candidate(s)</th><th class="r">In the field</th></tr></thead><tbody>`+
+    ours.map(x=>{const seats=n(x.c.seats)||1,open=seats-x.k.length;return `<tr class="click" data-edit-contest="${esc(x.c.id)}" tabindex="0"><td><b>${esc(x.c.name)}</b></td><td>${esc(scopeLabel(x.c))}</td><td class="r">${seats}</td>
+      <td>${x.k.length?x.k.map(k=>`<span class="symtag">${TORCH_SVG}</span> ${esc(k.name)}`).join("<br>"):'<span class="stale">No Torch candidate</span>'}${x.k.length&&open>0?` <span class="note">(${open} seat${open===1?"":"s"} without our candidate)</span>`:""}</td>
+      <td class="r">${(x.c.candidates||[]).length}</td></tr>`}).join("")+`</tbody></table></div>`;
+  if(!S.team.length){$("teamGroups").innerHTML=`<div style="grid-column:1/-1">${emptyBox("No team members yet","Add the central committee, a coordinator for each division and district, a coordinator for every college, and focal persons for media, polling day and other tasks.",["member","Add member"])}</div>`;return}
+  const match=m=>(!tdv||m.division===tdv||m.level==="centre")&&(!q||[m.name,m.role,m.focus,m.unit,m.district,m.division,m.phone,(S.units.find(u=>u.id===m.unitId)||{}).name].join(" ").toLowerCase().includes(q));
+  const notFocal=m=>m.role!=="Focal person";
+  const groups=[["Centre — Punjab",m=>m.level==="centre"&&notFocal(m)],["Division — Directorates",m=>m.level==="division"&&notFocal(m)],["District",m=>m.level==="district"&&notFocal(m)],["Unit — Colleges",m=>(m.level==="unit"||!TEAM_LEVELS[m.level])&&notFocal(m)],["Focal persons",m=>!notFocal(m)]];
+  $("teamGroups").innerHTML=groups.map(([lbl,f])=>{const ms=S.team.filter(m=>f(m)&&match(m)).sort((a,b)=>(a.division||"").localeCompare(b.division||"")||(a.district||"").localeCompare(b.district||"")||ROLES.indexOf(a.role)-ROLES.indexOf(b.role)||(a.focus||"").localeCompare(b.focus||""));
+    return `<div class="card"><h3>${lbl} <span class="note">(${ms.length})</span></h3><div class="list">${ms.length?ms.slice(0,150).map(memberRow).join("")+(ms.length>150?`<div class="note">${ms.length-150} more: narrow with the search or division filter.</div>`:""):'<div class="note">No one here yet.</div>'}</div></div>`}).join("");
+}
+
+function renderHeader(){
+  const c=S.cfg;
+  $("hdrTitle").textContent=c.panel?c.panel:"PPLA Election Manager";
+  if(c.pollDate){const d=dayDiff(c.pollDate,todayStr());$("stamp").hidden=false;$("daysLeft").textContent=d>=0?d:"0";$("pollDate").textContent=fmtDate(c.pollDate)}else $("stamp").hidden=true;
+  $("btnSettings").hidden=S.readOnly&&!!c.panel;
+}
+function renderData(){
+  let saved="";try{const d=JSON.parse(localStorage.getItem(KEY)||"{}");saved=d.savedAt?" Last saved on this device "+new Date(d.savedAt).toLocaleString()+".":""}catch(e){}
+  $("verLine").textContent=verText();
+  $("officeLine").innerHTML=officeNums().length?`Results go to <b>${esc(officeName())}</b> · WhatsApp ${esc(S.cfg.officeWa||S.cfg.officeWa2)}`:`<span class="stale">Main Office WhatsApp number not set.</span> Set it under "Set panel name &amp; polling day".`;
+  $("dataSummary").textContent=`This device holds ${S.units.length} units, ${S.acts.length} outreach entries, ${S.team.length} team members, ${S.contests.length} posts and ${S.results.length} unit results.${saved}`;
+  const standalone=window.matchMedia&&window.matchMedia("(display-mode: standalone)").matches||navigator.standalone;
+  $("installState").textContent=AB?"You're using the PPLA Desk Android app.":standalone?"You're using the installed app.":location.protocol==="file:"?"Opened as a file: installing needs the app to be opened from its web link.":"";
+}
+function render(){renderHeader();({punjab:renderPunjab,division:renderDivision,units:renderUnits,activities:renderActs,team:renderTeam,results:renderResults,data:renderData})[S.tab]()}
+
+/* ---------- tabs ---------- */
+function setTab(t){S.tab=t;document.querySelectorAll("#tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.tab===t));document.querySelectorAll("section.panel").forEach(s=>s.hidden=s.id!=="tab-"+t);try{localStorage.setItem("ppla.tab",t)}catch(e){}render();window.scrollTo({top:0})}
+$("tabs").addEventListener("click",e=>{const b=e.target.closest("button[data-tab]");if(b)setTab(b.dataset.tab)});
+const unitsFrom0=()=>{S.uLimit=40;renderUnits()};
+let searchTimer=0;
+$("uSearch").addEventListener("input",()=>{clearTimeout(searchTimer);searchTimer=setTimeout(unitsFrom0,150)});
+$("uDiv").addEventListener("input",()=>{fillDistricts();unitsFrom0()});
+["uDist","uSup","uFlag"].forEach(id=>$(id).addEventListener("input",unitsFrom0));
+$("uMore").addEventListener("click",()=>{S.uLimit+=40;renderUnits()});
+["aLevel","aDiv","aStatus"].forEach(id=>$(id).addEventListener("input",renderActs));
+let teamTimer=0;$("tSearch").addEventListener("input",()=>{clearTimeout(teamTimer);teamTimer=setTimeout(renderTeam,150)});$("tDiv").addEventListener("input",renderTeam);
+
+/* ---------- sheet/forms ---------- */
+function openSheet(html,onSubmit,onDelete){
+  const sh=$("sheet");sh.innerHTML=html;$("overlay").hidden=false;
+  const f=sh.querySelector("form");
+  f.addEventListener("submit",async e=>{e.preventDefault();const data=Object.fromEntries(new FormData(f).entries());const btn=f.querySelector("[type=submit]");btn.disabled=true;try{await onSubmit(data,f)}finally{btn.disabled=false}});
+  sh.querySelector("[data-close]").addEventListener("click",closeSheet);
+  const del=sh.querySelector("[data-delete]");
+  if(del)del.addEventListener("click",()=>{if(del.dataset.armed){onDelete()}else{del.dataset.armed="1";del.textContent="Tap again to delete"}});
+  const first=f.querySelector("input,select");first&&first.focus();
+}
+function closeSheet(){$("overlay").hidden=true;$("sheet").innerHTML=""}
+$("overlay").addEventListener("click",e=>{if(e.target.id==="overlay")closeSheet()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("overlay").hidden)closeSheet()});
+
+const opt=(arr,sel)=>arr.map(o=>{const[v,l]=Array.isArray(o)?o:[o,o];return `<option value="${esc(v)}"${v===sel?" selected":""}>${esc(l)}</option>`}).join("");
+const foot=(isEdit)=>`<div class="formfoot">${isEdit&&!S.readOnly?`<button type="button" class="btn danger" data-delete>Delete</button>`:"<span></span>"}<div class="btnrow"><button type="button" class="btn" data-close>Cancel</button>${S.readOnly?"":`<button type="submit" class="btn primary">Save</button>`}</div></div>`;
+
+async function save(col,id,data,msg){
+  const arr=S[COLKEY[col]];
+  if(id){const i=arr.findIndex(x=>x.id===id);if(i>=0)arr[i]=Object.assign({id},data);else arr.push(Object.assign({id},data))}
+  else arr.push(Object.assign({id:uid()},data));
+  persist();render();toast(msg);return true;
+}
+async function remove(col,id){const k=COLKEY[col];S[k]=S[k].filter(x=>x.id!==id);S.deleted[col+"/"+id]=new Date().toISOString();persist();render();toast("Deleted");closeSheet()}
+
+function unitForm(u){
+  u=u||{division:S.tab==="division"?S.div:"",support:""};
+  const ln=lastContact(u), wa=waLink(u.phone);
+  openSheet(`<h2 id="sheetTitle">${u.id?"Edit unit":"Add college unit"}</h2>
+    ${u.emis||u.ctype?`<div class="note" style="margin-top:-8px">${esc([u.emis?"EMIS "+u.emis:"",u.ctype,u.gender].filter(Boolean).join(" · "))}${ln?" · last contact "+esc(fmtDate(ln)):""}</div>`:""}
+    <form class="f">
+    <label class="full">College name<input name="name" required value="${esc(u.name)}" placeholder="e.g. Govt Graduate College Asghar Mall"></label>
+    <label>Division<select name="division" required><option value="">Choose…</option>${opt(DIVISIONS,u.division)}</select></label>
+    <label>District<input name="district" list="distList" value="${esc(u.district)}"></label>
+    <label>Faculty strength (voters)<input name="members" type="number" min="0" inputmode="numeric" value="${esc(u.members||"")}"></label>
+    <label>Contacted so far<input name="contacted" type="number" min="0" inputmode="numeric" value="${esc(u.contacted||"")}"></label>
+    <div class="full seg" role="radiogroup" aria-label="Support level"><span class="seglbl">Support level</span>
+      ${[["","Not assessed","c-none"],...SUPPORT].map(s=>`<label><input type="radio" name="support" value="${s[0]}"${(SUPMAP[u.support]?u.support:"")===s[0]?" checked":""}><span><i class="${s[2]}"></i>${esc(s[1])}</span></label>`).join("")}</div>
+    <label>Last visit<span class="inl"><input name="lastVisit" id="uLastVisit" type="date" value="${esc(u.lastVisit)}"><button type="button" class="btn small" id="uVisitedToday">Today</button></span></label>
+    <label>Unit representative<input name="rep" value="${esc(u.rep)}"></label>
+    <label>Rep phone / WhatsApp<span class="inl"><input name="phone" type="tel" value="${esc(u.phone)}" placeholder="03xx-xxxxxxx">${wa?`<a class="btn small" href="${esc(wa)}" target="_blank" rel="noopener">WhatsApp</a>`:""}</span></label>
+    <label class="full">Notes (staff-room demands, pending promotions, influential seniors, rival activity)<textarea name="notes">${esc(u.notes)}</textarea></label>
+    ${foot(!!u.id)}</form>`,
+  async d=>{
+    if(n(d.contacted)>n(d.members)&&n(d.members)){toast("Contacted can't be more than the faculty strength");return}
+    const body={name:d.name.trim(),division:d.division,district:d.district.trim().toUpperCase(),members:n(d.members),contacted:n(d.contacted),support:d.support||"",lastVisit:d.lastVisit,rep:d.rep.trim(),phone:d.phone.trim(),notes:d.notes.trim(),
+      emis:u.emis||"",gender:u.gender||"",ctype:u.ctype||"",updatedAt:new Date().toISOString()};
+    if(await save("units",u.id,body,u.id?"Unit updated":"Unit added"))closeSheet()},
+  ()=>remove("units",u.id));
+  $("uVisitedToday").addEventListener("click",()=>{$("uLastVisit").value=todayStr()});
+}
+
+function actForm(a,preset){
+  a=a||Object.assign({level:S.tab==="division"?"division":"unit",division:S.tab==="division"?S.div:"",status:"planned",date:todayStr()},preset||{});
+  const unitOpts=div=>`<option value="">— Not tied to one college —</option>`+S.units.filter(u=>!div||u.division===div).sort((x,y)=>x.name.localeCompare(y.name)).map(u=>`<option value="${esc(u.id)}"${u.id===a.unitId?" selected":""}>${esc(u.name)}</option>`).join("");
+  openSheet(`<h2 id="sheetTitle">${a.id?"Edit outreach":"Plan outreach"}</h2><form class="f">
+    <label class="full">Title<input name="title" required value="${esc(a.title)}" placeholder="e.g. Staff-room meeting on promotion backlog"></label>
+    <label>Level<select name="level" id="fLevel">${opt(Object.entries(LEVELS),a.level)}</select></label>
+    <label>Type<select name="type">${opt(ACT_TYPES,a.type)}</select></label>
+    <label id="fDivWrap">Division<select name="division" id="fDiv"><option value="">Choose…</option>${opt(DIVISIONS,a.division)}</select></label>
+    <label id="fUnitWrap">College unit<select name="unitId" id="fUnit">${unitOpts(a.division)}</select></label>
+    <label>Date<input name="date" type="date" value="${esc(a.date)}"></label>
+    <label>Status<select name="status">${opt([["planned","Planned"],["done","Done"],["cancelled","Cancelled"]],a.status)}</select></label>
+    <label>Lead person<input name="owner" value="${esc(a.owner)}"></label>
+    <label>People reached<input name="reached" type="number" min="0" inputmode="numeric" value="${esc(a.reached)}"></label>
+    <label class="full">Notes (demands raised, commitments made, follow-ups)<textarea name="notes">${esc(a.notes)}</textarea></label>
+    ${foot(!!a.id)}</form>`,
+  async d=>{
+    if(d.level!=="centre"&&!d.division){toast("Choose a division for unit or division outreach");return}
+    const body={title:d.title.trim(),level:d.level,type:d.type,division:d.level==="centre"?"":d.division,unitId:d.level==="unit"?(d.unitId||""):"",date:d.date,status:d.status,owner:d.owner.trim(),reached:n(d.reached),notes:d.notes.trim(),updatedAt:new Date().toISOString()};
+    if(await save("activities",a.id,body,a.id?"Outreach updated":"Outreach saved"))closeSheet()},
+  ()=>remove("activities",a.id));
+  const sync=()=>{const lv=$("fLevel").value;$("fDivWrap").hidden=lv==="centre";$("fUnitWrap").hidden=lv!=="unit"};
+  $("fLevel").addEventListener("change",sync);
+  $("fDiv").addEventListener("change",()=>{a.unitId="";$("fUnit").innerHTML=unitOpts($("fDiv").value)});
+  sync();
+}
+
+function memberForm(m){
+  const dl=S.tab==="division";
+  m=m||{level:dl?"division":"unit",division:dl?S.div:($("tDiv").value||""),role:dl?"Divisional coordinator":"Unit coordinator"};
+  const unitOpts=(div,dist)=>`<option value="">— Choose the college —</option>`+S.units.filter(u=>(!div||u.division===div)&&(!dist||norm(u.district)===norm(dist))).sort((x,y)=>x.name.localeCompare(y.name)).map(u=>`<option value="${esc(u.id)}"${u.id===m.unitId?" selected":""}>${esc(u.name)}</option>`).join("");
+  openSheet(`<h2 id="sheetTitle">${m.id?"Edit team member":"Add team member"}</h2><form class="f">
+    <label class="full">Name<input name="name" required value="${esc(m.name)}"></label>
+    <label>Role<select name="role" id="mRole">${opt(ROLES,m.role)}</select></label>
+    <label>Works at level<select name="level" id="mLevel">${opt(Object.entries(TEAM_LEVELS),m.level)}</select></label>
+    <label id="mFocusWrap" class="full">Focal person for<input name="focus" list="focusList" value="${esc(m.focus)}" placeholder="e.g. Media &amp; social media"><datalist id="focusList">${FOCUS.map(f=>`<option value="${esc(f)}">`).join("")}</datalist></label>
+    <label id="mDivWrap">Division<select name="division" id="mDiv"><option value="">Choose…</option>${opt(DIVISIONS,m.division)}</select></label>
+    <label id="mDistWrap">District<input name="district" id="mDist" list="distList" value="${esc(m.district)}"></label>
+    <label id="mUnitWrap" class="full">College (unit)<select name="unitId" id="mUnit">${unitOpts(m.division,m.district)}</select></label>
+    <label>Designation<input name="unit" value="${esc(m.unit)}" placeholder="e.g. Associate Professor (Physics)"></label>
+    <label>Phone / WhatsApp<input name="phone" type="tel" value="${esc(m.phone)}" placeholder="03xx-xxxxxxx"></label>
+    ${foot(!!m.id)}</form>`,
+  async d=>{
+    const lv=d.level;
+    if(lv!=="centre"&&!d.division){toast("Choose the division");return}
+    if(lv==="district"&&!(d.district||"").trim()){toast("Enter the district");return}
+    const body={name:d.name.trim(),role:d.role,level:lv,division:lv==="centre"?"":(d.division||""),district:lv==="centre"||lv==="division"?"":(d.district||"").trim().toUpperCase(),
+      unitId:lv==="unit"?(d.unitId||""):"",focus:d.role==="Focal person"?(d.focus||"").trim():"",unit:d.unit.trim(),phone:d.phone.trim(),updatedAt:new Date().toISOString()};
+    // A unit coordinator fills the college's rep slot if it is still empty, so the unit card shows who leads there.
+    const u=body.unitId&&UNIT_ROLES.includes(body.role)?S.units.find(x=>x.id===body.unitId):null;
+    if(u&&!u.rep){u.rep=body.name;if(!u.phone)u.phone=body.phone;u.updatedAt=body.updatedAt}
+    if(await save("team",m.id,body,m.id?"Member updated":"Member added"))closeSheet()},
+  ()=>remove("team",m.id));
+  const sync=()=>{const lv=$("mLevel").value;$("mDivWrap").hidden=lv==="centre";$("mDistWrap").hidden=lv==="centre"||lv==="division";$("mUnitWrap").hidden=lv!=="unit";$("mFocusWrap").hidden=$("mRole").value!=="Focal person"};
+  const refillUnits=()=>{$("mUnit").innerHTML=unitOpts($("mDiv").value,$("mDist").value)};
+  $("mRole").addEventListener("change",()=>{const l=ROLE_LEVEL[$("mRole").value];if(l)$("mLevel").value=l;sync()});
+  $("mLevel").addEventListener("change",sync);$("mDiv").addEventListener("change",refillUnits);$("mDist").addEventListener("change",refillUnits);sync();
+}
+
+function settingsForm(){
+  const c=S.cfg;
+  openSheet(`<h2 id="sheetTitle">Campaign settings</h2><form class="f">
+    <label class="full">Panel / coalition name<input name="panel" value="${esc(c.panel)}" placeholder="${esc(COALITION)}"></label>
+    <label>Polling day<input name="pollDate" type="date" value="${esc(c.pollDate)}"></label>
+    <label>Election body<input name="body" value="${esc(c.body||"Punjab Professors & Lecturers Association")}"></label>
+    <div class="full ballothead"><b>Main Election Office</b> · every polling agent sends results here. Set it once on the central desk, then send the backup to all phones.</div>
+    <label class="full">Office name<input name="officeName" value="${esc(c.officeName||DEFAULT_OFFICE)}"></label>
+    <label>Office WhatsApp number<input name="officeWa" type="tel" value="${esc(c.officeWa)}" placeholder="03xx-xxxxxxx"></label>
+    <label>Backup number (if the first is busy)<input name="officeWa2" type="tel" value="${esc(c.officeWa2)}" placeholder="03xx-xxxxxxx"></label>
+    ${foot(false)}</form>`,
+  async d=>{
+    for(const k of["officeWa","officeWa2"])if(d[k].trim()&&!waNumber(d[k])){toast("Check the office number: use a mobile number like 0300-1234567");return}
+    S.cfg=Object.assign({},S.cfg,{panel:d.panel.trim(),pollDate:d.pollDate,body:d.body.trim(),officeName:d.officeName.trim()||DEFAULT_OFFICE,officeWa:d.officeWa.trim(),officeWa2:d.officeWa2.trim(),updatedAt:new Date().toISOString()});persist();render();toast("Settings saved");closeSheet()});
+}
+$("btnSettings").addEventListener("click",settingsForm);
+
+/* ---------- delegated clicks ---------- */
+document.addEventListener("click",async e=>{
+  const t=e.target.closest("[data-add],[data-edit-unit],[data-edit-act],[data-edit-member],[data-done],[data-div],[data-divchip],[data-plan-unit],[data-dist],[data-assign],[data-rgo-tab]");
+  if(!t)return;
+  if(t.dataset.assign){memberForm(JSON.parse(t.dataset.assign));return}
+  if(t.dataset.rgoTab){S.rview=t.dataset.rgoTab;setTab("results");return}
+  if(t.dataset.dist){$("uDiv").value=S.div;fillDistricts();$("uDist").value=t.dataset.dist;$("uSearch").value="";$("uSup").value="";$("uFlag").value="";S.uLimit=40;setTab("units");return}
+  if(t.dataset.add){({unit:()=>unitForm(),activity:()=>actForm(),member:()=>memberForm()})[t.dataset.add]();return}
+  if(t.dataset.editUnit){unitForm(S.units.find(u=>u.id===t.dataset.editUnit));return}
+  if(t.dataset.editAct){actForm(S.acts.find(a=>a.id===t.dataset.editAct));return}
+  if(t.dataset.editMember){memberForm(S.team.find(m=>m.id===t.dataset.editMember));return}
+  if(t.dataset.planUnit){const u=S.units.find(x=>x.id===t.dataset.planUnit);actForm(null,{level:"unit",division:u.division,unitId:u.id,type:"College visit",title:"Visit: "+u.name});return}
+  if(t.dataset.div){S.div=t.dataset.div;setTab("division");return}
+  if(t.dataset.divchip){S.div=t.dataset.divchip;try{localStorage.setItem("ppla.div",S.div)}catch(_){}renderDivision();return}
+  if(t.dataset.done){const a=S.acts.find(x=>x.id===t.dataset.done);if(!a)return;a.status="done";a.updatedAt=new Date().toISOString();persist();render();toast("Marked done")}
+});
+document.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.matches("tr.click")){e.target.click()}});
+$("dAddUnit").addEventListener("click",()=>unitForm());
+$("dBrief").addEventListener("click",()=>shareText(briefText(S.div),S.div+" brief"));
+$("pBrief").addEventListener("click",()=>shareText(briefText(""),"Today's brief"));
+$("dAddAct").addEventListener("click",()=>actForm());
+
+/* ---------- export ---------- */
+$("btnExport").addEventListener("click",async()=>{
+  const cols=["emis_code","name","district","division","members","contacted","support","rep","phone","lastVisit","notes"];
+  const q=v=>`"${String(v??"").replace(/"/g,'""')}"`;
+  const list=S.units.slice().sort((a,b)=>a.division.localeCompare(b.division)||(a.district||"").localeCompare(b.district||"")||a.name.localeCompare(b.name));
+  const csv=[cols.join(","),...list.map(u=>cols.map(c=>q(c==="support"?(SUPMAP[u.support]||["","Not assessed"])[1]:c==="emis_code"?u.emis:u[c])).join(","))].join("\n");
+  download("ppla-units-"+todayStr()+".csv","﻿"+csv,"text/csv;charset=utf-8");
+});
+$("btnCsv").addEventListener("click",()=>{if(!S.units.length){toast("No units to export yet");return}$("btnExport").click()});
+
+/* ---------- spreadsheet (.csv) import ---------- */
+function parseCSV(text){
+  text=text.replace(/^﻿/,"");
+  const first=text.split(/\r?\n/,1)[0], delim=[",",";","\t"].sort((a,b)=>first.split(b).length-first.split(a).length)[0];
+  const rows=[];let row=[],cell="",inQ=false;
+  for(let i=0;i<text.length;i++){const c=text[i];
+    if(inQ){if(c==='"'){if(text[i+1]==='"'){cell+='"';i++}else inQ=false}else cell+=c}
+    else if(c==='"')inQ=true;
+    else if(c===delim){row.push(cell);cell=""}
+    else if(c==="\n"||c==="\r"){if(c==="\r"&&text[i+1]==="\n")i++;row.push(cell);rows.push(row);row=[];cell=""}
+    else cell+=c}
+  if(cell!==""||row.length){row.push(cell);rows.push(row)}
+  return rows.filter(r=>r.some(x=>x.trim()!==""));
+}
+const CSV_COLS={emis:["emis_code","emis","emis code","code","college code"],name:["name","college","college name","unit"],district:["district"],division:["division","directorate"],
+  members:["members","voters","faculty","faculty strength","registered","strength"],contacted:["contacted"],support:["support","support level"],rep:["rep","unit rep","unit representative","representative"],
+  phone:["phone","rep phone","whatsapp","mobile"],notes:["notes","note","remarks"],lastVisit:["lastvisit","last visit"]};
+function parseSupport(v){const s=norm(v);if(!s)return null;if(s.startsWith("strong"))return"strong";if(s.startsWith("lean"))return"lean";if(s.startsWith("undec"))return"undec";if(s.startsWith("opp"))return"opp";if(s.startsWith("not"))return"";return null}
+function parseDivision(v){const s=norm(v).replace(/ division$/,"");if(!s)return"";if(["dg khan","d g khan","dgkhan"].includes(s))return"Dera Ghazi Khan";return DIVISIONS.find(d=>norm(d)===s)||""}
+function importUnitsCSV(text){
+  const rows=parseCSV(text);if(rows.length<2)return {error:"The file has no data rows."};
+  const head=rows[0].map(h=>norm(h)), col={};
+  for(const[k,names]of Object.entries(CSV_COLS)){const i=head.findIndex(h=>names.includes(h)||names.includes(h.replace(/ /g,"")));if(i>=0)col[k]=i}
+  if(col.emis===undefined&&col.name===undefined)return {error:"No emis_code or name column found in the first row."};
+  const byEmis=new Map(), byName=new Map(), byNameOnly=new Map();
+  for(const u of S.units){if(u.emis)byEmis.set(String(u.emis),u);byEmis.set(u.id,u);byName.set(norm(u.name)+"|"+u.division,u);const k=norm(u.name);byNameOnly.set(k,byNameOnly.has(k)?null:u)}
+  let updated=0,added=0,skipped=0;const now=new Date().toISOString();
+  for(const r of rows.slice(1)){
+    const g=k=>col[k]===undefined?"":String(r[col[k]]??"").trim();
+    const emis=g("emis").replace(/\.0+$/,""), name=g("name"), div=parseDivision(g("division"));
+    let u=(emis&&byEmis.get(emis))||(name&&div&&byName.get(norm(name)+"|"+div))||(name&&byNameOnly.get(norm(name)))||null;
+    const ch={};
+    if(g("district"))ch.district=g("district").toUpperCase();
+    for(const k of["members","contacted"])if(g(k)!==""&&isFinite(Number(g(k))))ch[k]=n(g(k));
+    const sp=parseSupport(g("support"));if(sp!==null)ch.support=sp;
+    for(const k of["rep","phone","notes"])if(g(k))ch[k]=g(k);
+    if(/^\d{4}-\d{2}-\d{2}$/.test(g("lastVisit")))ch.lastVisit=g("lastVisit");
+    if(u){if(div&&!u.division)ch.division=div;if(!Object.keys(ch).length){skipped++;continue}Object.assign(u,ch,{updatedAt:now});updated++}
+    else if(name&&div){const nu=Object.assign({id:uid(),emis:emis,name,division:div,district:"",members:0,contacted:0,support:"",rep:"",phone:"",lastVisit:"",notes:""},ch,{updatedAt:now});S.units.push(nu);byName.set(norm(name)+"|"+div,nu);if(emis)byEmis.set(emis,nu);added++}
+    else skipped++;
+  }
+  return {updated,added,skipped};
+}
+$("btnCsvIn").addEventListener("click",()=>{$("csvIn").value="";$("csvIn").click()});
+$("csvIn").addEventListener("change",async e=>{
+  const f=e.target.files[0];if(!f)return;
+  let r;try{r=importUnitsCSV(await f.text())}catch(_){toast("Couldn't read that file. Save it from Excel as CSV and try again.");return}
+  if(r.error){toast(r.error);return}
+  persist();render();toast(`Spreadsheet: ${r.updated} updated, ${r.added} added${r.skipped?`, ${r.skipped} rows skipped`:""}`);
+});
+$("btnDirectory").addEventListener("click",()=>{const k=loadDirectory();if(k){persist();render()}toast(k?`Added ${k} colleges from the directory`:"All directory colleges are already on this device")});
+
+/* ---------- backup / restore ---------- */
+$("btnBackup").addEventListener("click",()=>{
+  const payload={app:"ppla-campaign-desk",version:2,exportedAt:new Date().toISOString(),cfg:S.cfg,units:S.units,activities:S.acts,team:S.team,contests:S.contests,results:S.results,deleted:S.deleted};
+  download("ppla-campaign-backup-"+todayStr()+".json",JSON.stringify(payload,null,1),"application/json");
+});
+function backupText(){return JSON.stringify({app:"ppla-campaign-desk",version:2,exportedAt:new Date().toISOString(),cfg:S.cfg,units:S.units,activities:S.acts,team:S.team,contests:S.contests,results:S.results,deleted:S.deleted})}
+$("btnSendBackup").hidden=!canSendFiles;
+$("btnSendBackup").addEventListener("click",()=>{if(!sendFile("ppla-campaign-backup-"+todayStr()+".json",backupText(),"application/json"))toast("Sharing files isn't supported here. Use Save backup.")});
+let importMode="merge";
+$("btnMerge").addEventListener("click",()=>{importMode="merge";$("fileIn").value="";$("fileIn").click()});
+$("btnReplace").addEventListener("click",()=>{importMode="replace";$("fileIn").value="";$("fileIn").click()});
+$("fileIn").addEventListener("change",async e=>{
+  const files=[...e.target.files];if(!files.length)return;
+  // several polling agents' result files can be merged in one go
+  if(files.length>1||importMode==="merge"&&files.length===1&&/ppla-result-/.test(files[0].name)){
+    let ok=0,bad=0,photos=0,added=0,updated=0;
+    for(const f of files){let d;try{d=JSON.parse(await f.text())}catch(_){bad++;continue}
+      if(!d||d.app!=="ppla-campaign-desk"){bad++;continue}
+      const r=mergeFile(d);ok++;added+=r.added;updated+=r.updated;photos+=await storePhotos(d)}
+    persist();render();toast(`${ok} file${ok===1?"":"s"} merged: ${added} new, ${updated} updated, ${photos} photo${photos===1?"":"s"}${bad?` · ${bad} unreadable`:""}`);return}
+  const f=files[0];
+  let d;try{d=JSON.parse(await f.text())}catch(_){toast("That file isn't a campaign backup");return}
+  if(!d||d.app!=="ppla-campaign-desk"){toast("That file isn't a campaign backup");return}
+  const inc={units:d.units||[],acts:d.activities||[],team:d.team||[],contests:d.contests||[],results:d.results||[]};
+  // result files from polling agents carry the result-sheet photo
+  let got=0;for(const[unitId,ph]of Object.entries(d.photos||{})){if(ph&&ph.data){try{await putPhoto(unitId,ph);got++}catch(e){}}}
+  if(importMode==="replace"){Object.assign(S,inc);S.cfg=d.cfg||{};S.deleted=d.deleted||{};persist();render();toast("Loaded "+f.name+(got?` with ${got} photo${got===1?"":"s"}`:""));return}
+  const r=mergeIncoming(inc,d.deleted,d.cfg);if(got){persist();render();toast(`Merged: ${r.added} new, ${r.updated} updated, ${got} result-sheet photo${got===1?"":"s"}`);return}
+  persist();render();toast(`Merged: ${r.added} new, ${r.updated} updated`);
+});
+
+// One file into this desk. A unit-result file from an agent may add an unknown college but never overwrites the desk's own copy.
+function mergeFile(d){
+  const inc={units:d.units||[],acts:d.activities||[],team:d.team||[],contests:d.contests||[],results:d.results||[]};
+  if(d.kind==="unit-result"){const have=new Set(S.units.map(u=>u.id));inc.units=inc.units.filter(u=>u&&!have.has(u.id));for(const r of inc.results)if(r&&r.unitId)delete S.deleted["results/r_"+r.unitId]}
+  return mergeIncoming(inc,d.deleted,d.cfg);
+}
+async function storePhotos(d){let got=0;for(const[unitId,ph]of Object.entries(d.photos||{})){if(ph&&ph.data){try{await putPhoto(unitId,ph);got++}catch(e){}}}return got}
+
+/* merge with matching by name, so units or posts typed separately on two phones still line up */
+const norm=s=>String(s||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+function mergeIncoming(inc,deleted,cfg){
+  // units: same college name + division = same unit
+  // EMIS code first (directory colleges), then same college name + division
+  const uKey=u=>norm(u.name)+"|"+u.division, uMap=new Map(S.units.map(u=>[uKey(u),u.id])), eMap=new Map(S.units.filter(u=>u.emis).map(u=>[String(u.emis),u.id])), uRemap={};
+  for(const u of inc.units){const ex=(u.emis&&eMap.get(String(u.emis)))||uMap.get(uKey(u));if(ex&&ex!==u.id)uRemap[u.id]=ex}
+  // posts: same name + scope = same post; candidates matched by name
+  const cKey=c=>norm(c.name)+"|"+c.scope+"|"+(c.division||"")+"|"+(uRemap[c.unitId]||c.unitId||"");
+  const cMap=new Map(S.contests.map(c=>[cKey(c),c])), cRemap={}, kRemap={};
+  for(const c of inc.contests){const ex=cMap.get(cKey(c));if(ex&&ex.id!==c.id){cRemap[c.id]=ex.id;kRemap[c.id]={};
+    for(const k of c.candidates||[]){const m=(ex.candidates||[]).find(x=>norm(x.name)===norm(k.name));if(m)kRemap[c.id][k.id]=m.id}}}
+  inc.units=inc.units.filter(u=>!uRemap[u.id]);
+  inc.contests=inc.contests.filter(c=>!cRemap[c.id]).map(c=>c.unitId&&uRemap[c.unitId]?Object.assign({},c,{unitId:uRemap[c.unitId]}):c);
+  inc.acts=inc.acts.map(a=>a.unitId&&uRemap[a.unitId]?Object.assign({},a,{unitId:uRemap[a.unitId]}):a);
+  inc.results=inc.results.map(r=>{
+    const unitId=uRemap[r.unitId]||r.unitId, votes={};
+    for(const[cid,vs]of Object.entries(r.votes||{})){const ncid=cRemap[cid]||cid, km=kRemap[cid]||{};votes[ncid]={};for(const[k,v]of Object.entries(vs||{}))votes[ncid][km[k]||k]=v}
+    return Object.assign({},r,{id:"r_"+unitId,unitId,votes});
+  });
+  const del=Object.assign({},S.deleted);
+  for(const[k,v]of Object.entries(deleted||{}))if(!del[k]||v>del[k])del[k]=v;
+  let added=0,updated=0;
+  for(const[col,key]of Object.entries(COLKEY)){
+    const map=new Map(S[key].map(x=>[x.id,x]));
+    for(const x of inc[key]){
+      if(!x||!x.id)continue;const mine=map.get(x.id);
+      if(!mine){map.set(x.id,x);added++}
+      else if((x.updatedAt||"")>(mine.updatedAt||"")){map.set(x.id,x);updated++}
+    }
+    S[key]=[...map.values()].filter(x=>{const t=del[col+"/"+x.id];return !t||(x.updatedAt||"")>t});
+  }
+  S.deleted=del;
+  if(cfg&&(cfg.updatedAt||"")>(S.cfg.updatedAt||""))S.cfg=cfg;
+  return {added,updated};
+}
+$("btnWipe").addEventListener("click",e=>{
+  const b=e.currentTarget;
+  if(!b.dataset.armed){b.dataset.armed="1";b.textContent="Tap again to clear everything";setTimeout(()=>{delete b.dataset.armed;b.textContent="Clear all data"},4000);return}
+  S.units=[];S.acts=[];S.team=[];S.contests=[];S.results=[];S.cfg={};S.deleted={};persist();phTx("readwrite",st=>st.clear()).then(()=>PH.keys.clear()).catch(()=>{});delete b.dataset.armed;b.textContent="Clear all data";render();toast("All data cleared from this device");
+});
+
+/* =====================================================================
+   RESULT-SHEET PHOTOS — required evidence for every unit result.
+   Kept in IndexedDB (too large for localStorage), one per unit, compressed to ~1600 px JPEG.
+   ===================================================================== */
+const PH={db:null,keys:new Set(),failed:false};
+function phDB(){return PH.db||(PH.db=new Promise((res,rej)=>{try{const q=indexedDB.open("ppla-photos",1);q.onupgradeneeded=()=>q.result.createObjectStore("photos",{keyPath:"unitId"});q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)}catch(e){rej(e)}}))}
+async function phTx(mode,fn){const db=await phDB();return new Promise((res,rej)=>{const t=db.transaction("photos",mode),q=fn(t.objectStore("photos"));t.oncomplete=()=>res(q&&q.result);t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error)})}
+const putPhoto=(unitId,ph)=>phTx("readwrite",st=>st.put(Object.assign({},ph,{unitId}))).then(()=>{PH.keys.add(unitId)});
+const getPhoto=unitId=>phTx("readonly",st=>st.get(unitId));
+const delPhoto=unitId=>phTx("readwrite",st=>st.delete(unitId)).then(()=>{PH.keys.delete(unitId)}).catch(()=>{});
+const hasPhoto=unitId=>PH.keys.has(unitId);
+async function loadPhotoKeys(){try{PH.keys=new Set(await phTx("readonly",st=>st.getAllKeys()));render()}catch(e){PH.failed=true}}
+// short fingerprint so the desk can tell which photo a result refers to
+function fnv(str){let h=0x811c9dc5;for(let i=0;i<str.length;i+=7){h^=str.charCodeAt(i);h=Math.imul(h,16777619)>>>0}return h.toString(16)}
+// camera/gallery file -> compressed JPEG data URL (browsers apply the photo's EXIF rotation when drawing)
+function readPhoto(file){return new Promise((res,rej)=>{
+  if(!file||!/^image\//.test(file.type||"image/"))return rej(new Error("not an image"));
+  const url=URL.createObjectURL(file),img=new Image();
+  img.onload=()=>{const M=1600,sc=Math.min(1,M/Math.max(img.naturalWidth,img.naturalHeight)),w=Math.round(img.naturalWidth*sc),h=Math.round(img.naturalHeight*sc);
+    const c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);URL.revokeObjectURL(url);
+    const data=c.toDataURL("image/jpeg",0.72);res({data,w,h,kb:Math.round(data.length*0.75/1024),h8:fnv(data),at:new Date().toISOString()})};
+  img.onerror=()=>{URL.revokeObjectURL(url);rej(new Error("unreadable image"))};img.src=url})}
+const photoMeta=ph=>({h8:ph.h8,at:ph.at,w:ph.w,h:ph.h,kb:ph.kb});
+function dataUrlBlob(d){const[head,b64]=d.split(",");const bin=atob(b64),a=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);return new Blob([a],{type:(head.match(/data:([^;]+)/)||[])[1]||"image/jpeg"})}
+async function sharePhoto(u){
+  const ph=await getPhoto(u.id).catch(()=>null);if(!ph){toast("No result-sheet photo on this phone for "+u.name);return}
+  const caption=`PPLA result sheet · ${u.name}${u.emis?" · EMIS "+u.emis:""} · ${new Date(ph.at).toLocaleString()}`, name="ppla-sheet-"+(u.emis||norm(u.name).replace(/ /g,"-"))+".jpg";
+  if(AB&&AB.shareImage){AB.shareImage(name,ph.data.split(",")[1],caption);return}
+  try{const f=new File([dataUrlBlob(ph.data)],name,{type:"image/jpeg"});if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],text:caption});return}}catch(e){if(e&&e.name==="AbortError")return}
+  const a=document.createElement("a");a.href=ph.data;a.download=name;document.body.appendChild(a);a.click();a.remove();toast("Photo saved to your downloads");
+}
+/* ---------- routing: every result goes to the Main Election Office (Lahore) ---------- */
+const DEFAULT_OFFICE="Main Election Office, Lahore";
+const officeName=()=>S.cfg.officeName||DEFAULT_OFFICE;
+const officeNums=()=>[S.cfg.officeWa,S.cfg.officeWa2].map(waNumber).filter(Boolean);
+// sent marks are per device (not synced): they only remind this agent what already went out
+const SENTKEY="ppla.sent";
+function sentLog(){try{return JSON.parse(localStorage.getItem(SENTKEY)||"{}")}catch(e){return{}}}
+function markSent(unitId,what){try{const s=sentLog();s[unitId]=Object.assign({},s[unitId],{[what]:new Date().toISOString()});localStorage.setItem(SENTKEY,JSON.stringify(s))}catch(e){}}
+// Text straight into the office chat: Android app opens WhatsApp on that chat; the web app uses a wa.me link.
+function textToOffice(text,num){
+  num=num||officeNums()[0];
+  if(!num){toast("The Main Office number isn't set. Ask the central desk for the latest backup.");shareText(text,"Result message");return false}
+  if(AB&&AB.shareTextTo){AB.shareTextTo(num,"PPLA result",text);return true}
+  window.open("https://wa.me/"+num+"?text="+encodeURIComponent(text),"_blank","noopener");return true;
+}
+// A file straight into the office chat on Android; elsewhere the share sheet opens and the agent picks the office chat.
+function fileToOffice(name,mime,text,num){
+  num=num||officeNums()[0];
+  if(AB&&AB.shareFileTo&&num){AB.shareFileTo(num,name,mime,text);return true}
+  if(sendFile(name,text,mime)){toast(`Choose the "${officeName()}" chat in WhatsApp`);return true}
+  download(name,text,mime);toast(`Saved. Send the file to the "${officeName()}" chat on WhatsApp.`);return true;
+}
+function resultFileText(u,rr,ph){return JSON.stringify({app:"ppla-campaign-desk",kind:"unit-result",version:2,exportedAt:new Date().toISOString(),units:[u],contests:S.contests.filter(c=>applies(c,u)),results:[rr],photos:ph?{[u.id]:ph}:{}})}
+const resultFileName=u=>"ppla-result-"+(u.emis||norm(u.name).replace(/ /g,"-"))+".json";
+// Send box under a saved result: the two steps that reach Lahore, with what this phone already sent.
+function officeBox(u){
+  const s=sentLog()[u.id]||{}, nums=officeNums(), at=t=>t?` <span class="okline" style="display:inline">✓ sent ${esc(new Date(t).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}))}</span>`:"";
+  const dc=S.team.find(m=>m.role==="Divisional coordinator"&&m.division===u.division&&waNumber(m.phone));
+  return `<div class="full officebox"><div><b>Send to ${esc(officeName())}</b>${nums.length?` <span class="note">· WhatsApp ${esc(S.cfg.officeWa||S.cfg.officeWa2)}</span>`:` <span class="stale">· office number not set</span>`}</div>
+    <div class="btnrow"><button type="button" class="btn primary" id="toOfficeMsg">1 · Send result message</button>${at(s.msg)}</div>
+    <div class="btnrow"><button type="button" class="btn primary" id="toOfficeFile">2 · Send result file + photo</button>${at(s.file)}</div>
+    <div class="btnrow"><button type="button" class="btn small" id="resShare">Share message elsewhere…</button>${hasPhoto(u.id)?`<button type="button" class="btn small" id="resPhoto">Send photo only</button>`:""}${dc?`<button type="button" class="btn small" id="toDivCo">Copy to ${esc(u.division)} coordinator</button>`:""}${nums[1]?`<button type="button" class="btn small" id="toOffice2">Use backup office number</button>`:""}</div></div>`;
+}
+function wireOfficeBox(u){
+  const go=async(what,num)=>{const rr=resFor(u.id);if(!rr)return;
+    if(what==="msg"){if(textToOffice(unitMessage(u,rr),num))markSent(u.id,"msg")}
+    else{const ph=await getPhoto(u.id).catch(()=>null);if(!ph&&!PH.failed){toast("No photo on this phone. Take the photo and save first.");return}
+      if(fileToOffice(resultFileName(u),"application/json",resultFileText(u,rr,ph),num))markSent(u.id,"file")}
+    setTimeout(()=>{const box=document.querySelector(".officebox");if(box){box.outerHTML=officeBox(u);wireOfficeBox(u)}},300)};
+  $("toOfficeMsg").addEventListener("click",()=>go("msg"));
+  $("toOfficeFile").addEventListener("click",()=>go("file"));
+  $("resShare").addEventListener("click",()=>shareText(unitMessage(u,resFor(u.id)),"Result: "+u.name));
+  const rp=$("resPhoto");if(rp)rp.addEventListener("click",()=>sharePhoto(u));
+  const b2=$("toOffice2");if(b2)b2.addEventListener("click",()=>{const n2=officeNums()[1];go("msg",n2).then(()=>go("file",n2))});
+  const dc=$("toDivCo");if(dc)dc.addEventListener("click",()=>{const m=S.team.find(m=>m.role==="Divisional coordinator"&&m.division===u.division&&waNumber(m.phone));if(m)textToOffice(unitMessage(u,resFor(u.id)),waNumber(m.phone))});
+}
+function viewPhoto(data,title){openSheet(`<h2 id="sheetTitle">${esc(title)}</h2><form class="f"><img class="full" src="${data}" alt="Result sheet photo" style="width:100%;border-radius:8px;border:1px solid var(--line)"><div class="formfoot"><span></span><div class="btnrow"><button type="button" class="btn" data-close>Close</button></div></div></form>`,()=>closeSheet())}
+// Photo panel inside the result form. S.pendingPhoto holds a new photo until the result is saved.
+function photoPanel(u,r){
+  const pend=S.pendingPhoto&&S.pendingPhoto.unitId===u.id?S.pendingPhoto:null, stored=hasPhoto(u.id), claimed=r&&r.photo;
+  const state=pend?`<span class="okline">New photo ready (${pend.kb} KB). It is stored when you save the result.</span>`:
+    stored?`<span class="okline">Result-sheet photo attached${claimed&&claimed.at?" · taken "+esc(new Date(claimed.at).toLocaleString()):""}.</span>`:
+    claimed?`<span class="warnlist" style="display:block">The agent's message says a photo was taken, but it hasn't reached this phone. Attach it from WhatsApp.</span>`:
+    PH.failed?`<span class="warnlist" style="display:block">This browser can't store photos. Send the photo on WhatsApp separately.</span>`:
+    `<span class="warnlist" style="display:block">Required: photograph the signed result sheet. The result can't be saved without it.</span>`;
+  return `<div class="full photobox"><div class="sechead"><b>Result-sheet photo</b>${pend||stored?`<button type="button" class="btn small" id="phView">View</button>`:""}</div>
+    <div class="phrow">${pend||stored?`<img id="phThumb" alt="Result sheet photo" class="phthumb">`:""}<div style="min-width:0;flex:1">${state}
+    <div class="btnrow" style="margin-top:8px"><button type="button" class="btn small${pend||stored?"":" primary"}" id="phCamBtn">${pend||stored?"Retake photo":"Take photo of result sheet"}</button><button type="button" class="btn small" id="phPickBtn">Choose from gallery</button></div></div></div>
+    <input type="file" id="phCam" accept="image/*" capture="environment" hidden><input type="file" id="phPick" accept="image/*" hidden></div>`;
+}
+function wirePhotoPanel(u){
+  const pend=()=>S.pendingPhoto&&S.pendingPhoto.unitId===u.id?S.pendingPhoto:null;
+  const thumb=$("phThumb");
+  if(thumb){if(pend())thumb.src=pend().data;else getPhoto(u.id).then(ph=>{if(ph)thumb.src=ph.data}).catch(()=>{})}
+  const take=async e=>{const file=e.target.files[0];if(!file)return;
+    try{const ph=await readPhoto(file);S.pendingPhoto=Object.assign({unitId:u.id},ph);
+      // keep figures typed so far: re-render only the photo panel
+      const box=document.querySelector(".photobox");box.outerHTML=photoPanel(u,resFor(u.id));wirePhotoPanel(u);toast("Photo ready. Tap Save result to keep it.")}
+    catch(err){toast("That file couldn't be read as a photo. Try again.")}};
+  $("phCam").addEventListener("change",take);$("phPick").addEventListener("change",take);
+  $("phCamBtn").addEventListener("click",()=>{$("phCam").value="";$("phCam").click()});
+  $("phPickBtn").addEventListener("click",()=>{$("phPick").value="";$("phPick").click()});
+  const v=$("phView");if(v)v.addEventListener("click",async()=>{const ph=pend()||await getPhoto(u.id).catch(()=>null);if(ph)viewPhoto(ph.data,"Result sheet · "+u.name)});
+}
+
+/* =====================================================================
+   RESULTS — posts, raw unit returns, unofficial tally
+   ===================================================================== */
+const SCOPES={centre:"Provincial",division:"Divisional",unit:"Unit level"};
+const BALLOT_NAME={centre:"Provincial ballot",division:"Divisional ballot",unit:"Unit ballot"};
+const SCOPE_ORDER={centre:0,division:1,unit:2};
+// Posts keep the order printed on the ballot paper (field "order"), then alphabetical.
+const cmpContest=(a,b)=>SCOPE_ORDER[a.scope]-SCOPE_ORDER[b.scope]||(a.division||"").localeCompare(b.division||"")||(a.order??999)-(b.order??999)||a.name.localeCompare(b.name);
+// Panel-stamp ballots: the voter stamps one panel's symbol box, which counts for every post on that ballot.
+// Voting method per ballot level: Provincial votes go to a whole panel; Divisional and Unit votes go to individual candidates.
+const BALLOT_DEFAULTS={centre:"panel",division:"post",unit:"post"};
+const panelMode=scope=>((S.cfg.ballotModes||{})[scope]||BALLOT_DEFAULTS[scope])==="panel";
+const panelKey=k=>norm(k.panel)||String(k.panel||"").trim()||"cand:"+k.id;
+const applies=(c,u)=>c.scope==="centre"||(c.scope==="division"&&u.division===c.division)||(c.scope==="unit"&&u.id===c.unitId);
+// Result lookup by unit, indexed once per data change (861 units × many posts would otherwise rescan the list).
+let resIdx=null,resIdxVer=-1,resIdxArr=null;
+const resFor=uid=>{if(resIdxVer!==dataVer||resIdxArr!==S.results){resIdx=new Map(S.results.map(r=>[r.unitId,r]));resIdxVer=dataVer;resIdxArr=S.results}return resIdx.get(uid)};
+const scopeLabel=c=>c.scope==="centre"?"Provincial (Punjab-wide)":c.scope==="division"?(c.division||"?")+" Division":((S.units.find(u=>u.id===c.unitId)||{}).name||"Unit");
+// Our candidate: panel matches the Settings panel name, or names the coalition or its Torch symbol.
+// Narrow on purpose: "Asatza" alone also names rival panels (Ittehad-e-Asatza Pakistan · Eagle, Tehreek-e-Asatza Punjab · Lion).
+const OUR_MARKS=["nawa e asatza","nawa asatza","nawae asatza","ittehad e asatza punjab","ittihad e asatza punjab","etehad e asatza punjab","ethad e asatza punjab","ethad a asatza punjab","torch","mashal","mashaal"];
+const OUR_MARKS_UR=["مشعل","نوائے اساتذہ","اتحاد اساتذہ پنجاب","اتحادِ اساتذہ پنجاب"];
+const isOurs=k=>{if(!k||!k.panel)return false;const raw=String(k.panel),p=norm(raw);
+  if(OUR_MARKS_UR.some(m=>raw.includes(m)))return true;
+  if(OUR_MARKS.some(m=>p.includes(m)))return true;
+  return !!(S.cfg.panel&&p&&(norm(S.cfg.panel).includes(p)||p.includes(norm(S.cfg.panel))))};
+const hasVotes=(r,c)=>r&&r.votes&&r.votes[c.id]&&Object.values(r.votes[c.id]).some(v=>v!==""&&v!=null);
+
+function tally(c){
+  const elig=S.units.filter(u=>applies(c,u));
+  let remaining=0,unknown=0,reported=0;
+  const tot={};(c.candidates||[]).forEach(k=>tot[k.id]=0);
+  for(const u of elig){
+    const r=resFor(u.id);
+    if(hasVotes(r,c)){reported++;for(const[k,v]of Object.entries(r.votes[c.id]))if(k in tot)tot[k]+=n(v)}
+    else{const reg=n(r&&r.registered)||n(u.members);remaining+=reg;if(!reg)unknown++}
+  }
+  const rows=(c.candidates||[]).map(k=>Object.assign({},k,{v:tot[k.id]})).sort((a,b)=>b.v-a.v);
+  const sum=rows.reduce((s,x)=>s+x.v,0), seats=Math.max(1,Math.round(n(c.seats))||1);
+  const contested=rows.length>seats;
+  const margin=contested?rows[seats-1].v-rows[seats].v:null;
+  const allIn=elig.length>0&&reported===elig.length;
+  const safe=reported>0&&contested&&!unknown&&margin>remaining;
+  return {elig,reported,remaining,unknown,rows,sum,seats,contested,margin,allIn,safe};
+}
+
+function renderResults(){
+  document.querySelectorAll("#rViews [data-rview]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.rview===S.rview));
+  $("rTally").hidden=S.rview!=="tally";$("rEnter").hidden=S.rview!=="enter";$("rSetup").hidden=S.rview!=="setup";
+  ({tally:renderTally,enter:renderEnter,setup:renderSetup})[S.rview]();
+}
+document.addEventListener("change",e=>{const sc=e.target.dataset&&e.target.dataset.ballotMode;if(!sc)return;
+  S.cfg=Object.assign({},S.cfg,{ballotModes:Object.assign({},BALLOT_DEFAULTS,S.cfg.ballotModes,{[sc]:e.target.value}),updatedAt:new Date().toISOString()});persist();
+  toast(BALLOT_NAME[sc]+": "+(e.target.value==="panel"?"agents enter one count per panel":"agents enter each candidate's votes"))});
+$("rViews").addEventListener("click",e=>{const b=e.target.closest("[data-rview]");if(!b)return;S.rview=b.dataset.rview;renderResults()});
+
+/* ---- ballots: posts grouped by the paper they are printed on ---- */
+function ballotsFor(cs){
+  const by={};
+  for(const c of cs.slice().sort(cmpContest)){
+    const b=by[c.scope]=by[c.scope]||{scope:c.scope,title:BALLOT_NAME[c.scope]+(c.scope==="division"&&c.division?" · "+c.division:""),posts:0,panels:[],seen:new Set()};
+    b.posts++;
+    for(const k of c.candidates||[]){const key=panelKey(k);if(!b.seen.has(key)){b.seen.add(key);b.panels.push({key,label:k.panel||k.name,ours:isOurs(k)})}}
+  }
+  return Object.values(by);
+}
+// Entry fields for one ballot: one count per panel, or each candidate's votes post by post.
+function ballotFields(b,cs,r){
+  if(panelMode(b.scope))return `<fieldset class="full"><legend>${esc(b.title)}</legend><div class="full note">${b.posts} post${b.posts===1?"":"s"} on this ballot. One stamp counts for a whole panel: enter the votes for each panel.</div>${b.panels.map(pn=>`<label>${esc(pn.label)}${pn.ours?` <span class="symtag">${TORCH_SVG}</span>`:""}<input type="number" min="0" inputmode="numeric" data-ps="${esc(b.scope)}" data-pk="${esc(pn.key)}" value="${esc(panelValue(r,b,pn.key))}"></label>`).join("")}</fieldset>`;
+  return `<div class="full ballothead"><b>${esc(b.title)}</b> · ${b.posts} post${b.posts===1?"":"s"} · enter each candidate's votes</div>`+
+    cs.filter(c=>c.scope===b.scope).sort(cmpContest).map(c=>`<fieldset class="full"><legend>${esc(c.name)}${c.seats>1?` · ${c.seats} seats`:""}</legend>${(c.candidates||[]).map(k=>`<label>${esc(k.name)}${k.panel&&k.panel!==k.name?` · ${esc(k.panel)}`:""}${isOurs(k)?` <span class="symtag">${TORCH_SVG}</span>`:""}<input type="number" min="0" inputmode="numeric" data-c="${esc(c.id)}" data-k="${esc(k.id)}" value="${esc(r&&r.votes&&r.votes[c.id]?r.votes[c.id][k.id]??"":"")}"></label>`).join("")}</fieldset>`).join("");
+}
+// Saved panel count, or one rebuilt from per-post votes (results entered before panel mode).
+function panelValue(r,b,key){
+  if(!r)return"";
+  if(r.panels&&r.panels[b.scope]&&key in r.panels[b.scope])return r.panels[b.scope][key];
+  for(const c of S.contests.filter(c=>c.scope===b.scope)){const k=(c.candidates||[]).find(k=>panelKey(k)===key);if(k&&r.votes&&r.votes[c.id]&&r.votes[c.id][k.id]!=null)return r.votes[c.id][k.id]}
+  return"";
+}
+function panelStandings(){
+  // one card per Provincial ballot and per division that has a divisional ballot
+  const groups=[];
+  if(panelMode("centre")&&S.contests.some(c=>c.scope==="centre"))groups.push({scope:"centre",division:"",title:"Provincial ballot · Punjab"});
+  if(panelMode("division"))for(const d of DIVISIONS)if(S.contests.some(c=>c.scope==="division"&&c.division===d))groups.push({scope:"division",division:d,title:"Divisional ballot · "+d});
+  let html="";
+  for(const g of groups){
+    const cs=S.contests.filter(c=>c.scope===g.scope&&(!g.division||c.division===g.division));
+    const b=ballotsFor(cs)[0];if(!b)continue;
+    const units=S.units.filter(u=>!g.division||u.division===g.division);
+    let reported=0,remaining=0,unknown=0;const tot={};b.panels.forEach(pn=>tot[pn.key]=0);
+    for(const u of units){const r=resFor(u.id),pv=r&&r.panels&&r.panels[g.scope];
+      if(pv&&Object.keys(pv).length){reported++;for(const pn of b.panels)tot[pn.key]+=n(pv[pn.key])}
+      else{const reg=n(r&&r.registered)||n(u.members);remaining+=reg;if(!reg)unknown++}}
+    if(!reported)continue;
+    const rows=b.panels.map(pn=>Object.assign({},pn,{v:tot[pn.key]})).sort((x,y)=>y.v-x.v), sum=rows.reduce((s,x)=>s+x.v,0);
+    const margin=rows.length>1?rows[0].v-rows[1].v:null, allIn=reported===units.length, safe=margin!=null&&!unknown&&margin>remaining;
+    html+=`<div class="card"><div class="sechead"><h3>${esc(g.title)}</h3><span class="note">Panel standings · ${reported}/${units.length} units</span></div>
+      <div class="tally">${rows.map((k,i)=>`<div class="trow${i===0&&sum?" lead":""}${k.ours?" ours":""}"><span class="rk">${i+1}</span><span class="who"><b>${esc(k.label)}</b>${k.ours?` <span class="symtag">${TORCH_SVG}Torch</span>`:""}</span><span class="vv">${k.v.toLocaleString()}<small>${sum?Math.round(k.v*1000/sum)/10:0}%</small></span><span class="bar"><span style="width:${rows[0].v?(k.v*100/rows[0].v).toFixed(1):0}%"></span></span></div>`).join("")}</div>
+      <div class="tstat${safe||allIn?" safe":""}">${margin==null?"Only one panel on this ballot.":allIn?`All units in. Unofficial lead: ${margin} votes.`:safe?`Unassailable lead (unofficial) of ${margin}: more than the ${remaining.toLocaleString()} voters still to report.`:unknown?`Lead ${margin}. Faculty strength not entered for ${unknown} unreported units, so no safe call yet.`:`Lead ${margin}. About ${remaining.toLocaleString()} voters still to report.`}</div></div>`;
+  }
+  return html?`<h2 style="margin:8px 0 0;font-size:22px">Panel standings</h2>`+html:"";
+}
+
+/* ---- ballot paper templates: the seats on each ballot, our Torch candidates, rival panels by symbol only ---- */
+// Rival panels are listed under panel name and symbol only (user's rule: never store opponents' personal names).
+const OUR_PANEL="نوائے اساتذہ پنجاب · Torch", RIVAL_PANELS=["اتحاد اساتذہ پاکستان · Eagle","تحریک اساتذہ پنجاب · Lion"];
+// Provincial ballot (voted Punjab-wide), from the coalition's Rawalpindi Division poster.
+const PROVINCIAL_TEMPLATE={posts:[
+  ["President Punjab","مرکزی صدر صوبہ پنجاب","ندیم احمد اشرفی"],
+  ["General Secretary Punjab","مرکزی جنرل سیکرٹری صوبہ پنجاب","محمد زاہد اعوان"],
+  ["Senior Vice President Punjab","مرکزی سینئر نائب صدر صوبہ پنجاب","ذوالفقار کھوکھر"],
+  ["Vice President Punjab (Rawalpindi Division)","مرکزی نائب صدر راولپنڈی ڈویژن","انوار الاسلام قریشی"]],rivals:RIVAL_PANELS};
+// Divisional ballots: [English post, Urdu post, our candidate]
+const BALLOT_TEMPLATES=[
+ {division:"Multan",rivals:RIVAL_PANELS,posts:[
+  ["President","صدر","فوزیہ محسن"],["General Secretary","جنرل سیکرٹری","اظہر حیات"],["Senior Vice President","سینئر نائب صدر","ڈاکٹر زاہد عمران"],["Vice President (Women)","نائب صدر خاتون","سلمیٰ ثمن"],
+  ["District President Multan","ضلعی صدر ملتان","ہمایوں فیض"],["District President Vehari","ضلعی صدر وہاڑی","محمد شاہد حفیظ"],["District President Lodhran","ضلعی صدر لودھراں","ڈاکٹر محمد عمران شاہد"],["District President Khanewal","ضلعی صدر خانیوال","حاجی محمد نسیم"],
+  ["Additional Secretary (Women)","ایڈیشنل سیکرٹری خاتون","فرح بتول"],["Joint Secretary I","جوائنٹ سیکرٹری I","اللہ بخش فریدی"],["Joint Secretary II","جوائنٹ سیکرٹری II","ثمرین طلعت"],["Joint Secretary (Women)","جوائنٹ سیکرٹری خاتون","کہکشاں عتیق"],
+  ["Secretary Publications","سیکرٹری نشر و اشاعت","عروہ نعیم"],["Finance Secretary","فنانس سیکرٹری","سیدہ آمنہ منظور"]]},
+ {division:"Rawalpindi",rivals:RIVAL_PANELS,posts:[
+  ["President","صدر راولپنڈی ڈویژن","صائمہ امجد"],["General Secretary","جنرل سیکرٹری","عبدالوہاب"],["Senior Vice President","سینئر نائب صدر","محمد احمد اویسی"],["Vice President (Women)","نائب صدر خاتون","فاطمہ شاہد"],
+  ["District President Rawalpindi","صدر ضلع راولپنڈی","پروین سلطان"],["District President Jhelum","صدر ضلع جہلم","حافظ عمر فاروق"],["District President Chakwal","صدر ضلع چکوال","ڈاکٹر ماجد اعجاز"],["District President Attock","صدر ضلع اٹک","منیبہ بشیر"],
+  ["District President Murree","صدر ضلع مری","شرجیلہ فائق"],["District President Talagang","صدر ضلع تلہ گنگ","عمران رضا منہاس"],
+  ["Additional General Secretary (Women)","ایڈیشنل جنرل سیکرٹری خاتون","ضوفشاں کرن"],["Joint Secretary I","جوائنٹ سیکرٹری I","حافظ ثناءاللہ"],["Joint Secretary II","جوائنٹ سیکرٹری II","راجہ محمد اکرام"],["Joint Secretary (Women)","جوائنٹ سیکرٹری خاتون","شاہدہ پروین"],
+  ["Secretary Publications","سیکرٹری نشر و اشاعت","وقاص رفیع"],["Finance Secretary","فنانس سیکرٹری","حافظ احمد علی"]]}];
+// Adds a template's posts at one scope; a post already set up there (same name) is left as it is.
+function addTemplatePosts(t,scope,div){
+  const now=new Date().toISOString();let added=0;
+  t.posts.forEach(([en,ur,ours],i)=>{const name=en+" · "+ur;
+    if(S.contests.some(c=>c.scope===scope&&(scope!=="division"||c.division===div)&&(norm(c.name)===norm(name)||norm(c.name)===norm(en))))return;
+    S.contests.push({id:uid(),name,scope,division:scope==="division"?div:"",unitId:"",seats:1,order:i,
+      candidates:[...t.rivals.map(panel=>({id:uid(),name:panel,panel})),{id:uid(),name:ours,panel:OUR_PANEL}],updatedAt:now});added++});
+  return added;
+}
+// A division's ballot, plus the Provincial posts if this device doesn't have them yet.
+function loadBallot(div){
+  const t=BALLOT_TEMPLATES.find(x=>x.division===div);if(!t)return {d:0,p:0};
+  return {d:addTemplatePosts(t,"division",div),p:addTemplatePosts(PROVINCIAL_TEMPLATE,"centre","")};
+}
+
+/* ---- setup ---- */
+function renderSetup(){
+  const head=`<div class="sechead"><h2>Posts on the ballot</h2><div class="btnrow">${BALLOT_TEMPLATES.map(t=>`<button class="btn small" data-load-ballot="${esc(t.division)}" type="button">Load ${esc(t.division)} ballot</button>`).join("")}<button class="btn primary" data-add-contest type="button">Add post</button></div></div>
+    <div class="card"><h3>How voters mark each ballot</h3><div class="filters">${["centre","division","unit"].map(sc=>`<label class="note" style="display:flex;flex-direction:column;gap:4px"><b>${esc(BALLOT_NAME[sc])}</b><select data-ballot-mode="${sc}">${opt([["panel","One stamp for a whole panel"],["post","Vote for individual candidates"]],panelMode(sc)?"panel":"post")}</select></label>`).join("")}</div></div>
+    <p class="note" style="margin:0">Elections run at three levels: Provincial, Divisional and Unit, each on its own ballot paper. Set the posts up before polling day, then send a backup to every polling agent so all phones carry the same posts and candidates.</p>`;
+  if(!S.contests.length){$("rSetup").innerHTML=head+`<div class="empty"><b>No posts set up</b><span>Add each office being contested (President, General Secretary, divisional and unit offices) with its candidates and their panels.</span><button class="btn small primary" data-add-contest type="button">Add the first post</button></div>`;return}
+  const list=S.contests.slice().sort(cmpContest);
+  $("rSetup").innerHTML=head+`<div class="ucards">`+list.map(c=>`<button class="ucard" data-edit-contest="${esc(c.id)}" type="button">
+    <span class="nm">${esc(c.name)}${n(c.seats)>1?` <span class="note">(${n(c.seats)} seats)</span>`:""}</span>
+    <span class="meta"><span class="pill p-${esc(c.scope)}">${esc(SCOPES[c.scope])}</span> ${esc(scopeLabel(c))}</span>
+    <span class="meta">${(c.candidates||[]).map(k=>esc(k.name)+(k.panel&&k.panel!==k.name?` <i>(${esc(k.panel)})</i>`:"")).join(" · ")||"No candidates yet"}</span>
+  </button>`).join("")+`</div>`;
+}
+function contestForm(c){
+  c=c||{scope:"centre",seats:1,candidates:[]};
+  const unitOpts=`<option value="">Choose…</option>`+S.units.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(u=>`<option value="${esc(u.id)}"${u.id===c.unitId?" selected":""}>${esc(u.name)} (${esc(u.division)})</option>`).join("");
+  openSheet(`<h2 id="sheetTitle">${c.id?"Edit post":"Add post"}</h2><form class="f">
+    <label class="full">Post / office<input name="name" required value="${esc(c.name)}" placeholder="e.g. President"></label>
+    <label>Who votes for it<select name="scope" id="cScope">${opt(Object.entries(SCOPES),c.scope)}</select></label>
+    <label>Seats to fill<input name="seats" type="number" min="1" inputmode="numeric" value="${esc(c.seats||1)}"></label>
+    <label id="cDivWrap">Division<select name="division"><option value="">Choose…</option>${opt(DIVISIONS,c.division)}</select></label>
+    <label id="cUnitWrap">College unit<select name="unitId">${unitOpts}</select></label>
+    <label class="full">Candidates, one per line as Name | Panel<textarea name="cands" rows="5" placeholder="Prof. Ahmad Khan | Nawa-e-Asatza (Torch)&#10;Dr. Sara Malik | Rival panel">${esc((c.candidates||[]).map(k=>k.name+(k.panel?" | "+k.panel:"")).join("\n"))}</textarea></label>
+    ${foot(!!c.id)}</form>`,
+  async d=>{
+    if(d.scope==="division"&&!d.division){toast("Choose the division for this post");return}
+    if(d.scope==="unit"&&!d.unitId){toast("Choose the college unit for this post");return}
+    const old=c.candidates||[];
+    const cands=d.cands.split("\n").map(l=>l.trim()).filter(Boolean).map(l=>{const[nm,...p]=l.split("|");const name=nm.trim(),panel=p.join("|").trim();const ex=old.find(k=>norm(k.name)===norm(name));return {id:ex?ex.id:uid(),name,panel}});
+    if(!cands.length){toast("Add at least one candidate");return}
+    const body={name:d.name.trim(),scope:d.scope,division:d.scope==="division"?d.division:"",unitId:d.scope==="unit"?d.unitId:"",seats:Math.max(1,Math.round(n(d.seats))||1),candidates:cands,order:c.order??null,updatedAt:new Date().toISOString()};
+    if(await save("contests",c.id,body,c.id?"Post updated":"Post added"))closeSheet()},
+  ()=>remove("contests",c.id));
+  const sync=()=>{const s=$("cScope").value;$("cDivWrap").hidden=s!=="division";$("cUnitWrap").hidden=s!=="unit"};
+  $("cScope").addEventListener("change",sync);sync();
+}
+
+/* ---- enter ---- */
+function renderEnter(){
+  if(!S.units.length){$("rEnter").innerHTML=`<div class="empty"><b>No college units yet</b><span>Results are entered per unit. Add the units first, or load the central backup.</span><button class="btn small primary" data-add="unit" type="button">Add unit</button></div>`;return}
+  if(!S.contests.length){$("rEnter").innerHTML=`<div class="empty"><b>No posts set up</b><span>Add the posts and candidates first, or load the central backup that has them.</span><button class="btn small primary" data-rgo="setup" type="button">Set up posts</button></div>`;return}
+  const units=S.units.slice().sort((a,b)=>a.division.localeCompare(b.division)||a.name.localeCompare(b.name));
+  if(S.enterUnit&&!units.some(u=>u.id===S.enterUnit))S.enterUnit="";
+  // Picker narrowed to one division (and a search) so agents don't scroll through 861 colleges
+  const eq=(S.enterQ||"").trim().toLowerCase();
+  const pick=units.filter(u=>u.id===S.enterUnit||((!S.enterDiv||u.division===S.enterDiv)&&(!eq||[u.name,u.district,u.emis].join(" ").toLowerCase().includes(eq))));
+  let sel=`<option value="">Choose the unit (${pick.length})…</option>`,cur="";
+  for(const u of pick){if(u.division!==cur){if(cur)sel+="</optgroup>";sel+=`<optgroup label="${esc(u.division)}">`;cur=u.division}
+    const r=resFor(u.id);sel+=`<option value="${esc(u.id)}"${u.id===S.enterUnit?" selected":""}>${r?(r.status==="verified"?"✔✔ ":"✔ "):""}${r&&hasPhoto(u.id)?"📷 ":""}${esc(u.name)}</option>`}
+  sel+="</optgroup>";
+  const u=units.find(x=>x.id===S.enterUnit), r=u?resFor(u.id):null;
+  let form="";
+  if(u){
+    const cs=S.contests.filter(c=>applies(c,u));
+    form=`<div class="card"><div class="sechead"><h3>${esc(u.name)}</h3>${r?`<span class="pill p-${r.status==="verified"?"done":"planned"}">${r.status==="verified"?"verified":"provisional"}</span>`:""}</div>
+    <form class="f" id="resForm">
+      <label>Registered voters<input name="registered" type="number" min="0" inputmode="numeric" value="${esc(r?r.registered:n(u.members)||"")}"></label>
+      <label>Votes cast<input name="cast" type="number" min="0" inputmode="numeric" value="${esc(r?r.cast:"")}"></label>
+      <label>Rejected / invalid<input name="rejected" type="number" min="0" inputmode="numeric" value="${esc(r?r.rejected:"")}"></label>
+      <label>Reported by<input name="enteredBy" value="${esc(r?r.enteredBy:"")}" placeholder="Polling agent"></label>
+      ${!cs.length?`<div class="full note">No posts apply to this unit yet.</div>`:ballotsFor(cs).map(b=>ballotFields(b,cs,r)).join("")}
+      ${photoPanel(u,r)}
+      <label>Status<select name="status">${opt([["provisional","Provisional (agent's count)"],["verified","Verified (matches signed result sheet)"]],r?r.status:"provisional")}</select></label>
+      <label>Note<input name="note" value="${esc(r?r.note:"")}" placeholder="e.g. recount requested"></label>
+      <div class="warnlist" id="resWarn"></div>
+      ${r?officeBox(u):`<div class="full note">After saving, send the result to the <b>${esc(officeName())}</b> in two taps.</div>`}
+      <div class="formfoot">${r?`<button type="button" class="btn danger" id="resDel">Delete result</button>`:"<span></span>"}
+        <div class="btnrow">${r?``:""}<button type="submit" class="btn primary">Save result</button></div></div>
+    </form></div>`;
+  }
+  const scope=units.filter(x=>!S.enterDiv||x.division===S.enterDiv);
+  const done=scope.filter(x=>resFor(x.id)), missing=scope.filter(x=>!resFor(x.id)), CAP=60;
+  $("rEnter").innerHTML=`<div class="filters"><select id="enterDiv" aria-label="Division"><option value="">All divisions</option>${opt(DIVISIONS,S.enterDiv)}</select><input id="enterQ" type="search" placeholder="Find college or EMIS code" value="${esc(S.enterQ||"")}"><select id="enterSel" aria-label="Unit">${sel}</select></div>${form}
+    <div class="card"><div class="sechead"><h3>Paste result messages</h3></div>
+      <p class="note" style="margin:0">Paste one or more result messages forwarded from polling agents on WhatsApp. Each carries a code line starting #PPLA1 that holds the figures.</p>
+      <textarea class="code" id="pasteBox" placeholder="Paste messages here"></textarea>
+      <div class="btnrow"><button class="btn primary" id="pasteGo" type="button">Import results</button></div></div>
+    <div class="card"><div class="sechead"><h3>Reporting status${S.enterDiv?" · "+esc(S.enterDiv):""}</h3><span class="note">${done.length} of ${scope.length} units in</span></div>
+      <div class="cov"><div class="track"><div class="fill" style="width:${pct(done.length,scope.length)}%"></div></div><span>${pct(done.length,scope.length)}%</span></div>
+      ${done.length?(()=>{const np=done.filter(x=>!hasPhoto(x.id));return `<div class="note"><b>Result-sheet photos on this phone:</b> ${done.length-np.length} of ${done.length} reported units.${np.length?` <b>Photo awaited:</b> ${np.slice(0,CAP).map(x=>`<a href="#" data-pick="${esc(x.id)}">${esc(x.name)}</a>`).join(" · ")}${np.length>CAP?` · and ${np.length-CAP} more`:""}`:""}</div>`})():""}
+      ${missing.length?`<div class="note"><b>Still awaited (${missing.length}):</b> ${missing.slice(0,CAP).map(x=>`<a href="#" data-pick="${esc(x.id)}">${esc(x.name)}</a> <span>(${esc(S.enterDiv?x.district:x.division)})</span>`).join(" · ")}${missing.length>CAP?` · <b>and ${missing.length-CAP} more</b> (choose a division to see them)`:""}</div>
+        <div class="btnrow"><button class="btn small" id="shareAwaited" type="button">Share awaited list</button></div>`:`<div class="okline">Every unit${S.enterDiv?" in "+esc(S.enterDiv):""} has reported.</div>`}
+    </div>`;
+  $("enterSel").addEventListener("change",e=>{S.enterUnit=e.target.value;S.pendingPhoto=null;renderEnter()});
+  $("enterDiv").addEventListener("change",e=>{S.enterDiv=e.target.value;renderEnter()});
+  let eqT=0;$("enterQ").addEventListener("input",e=>{clearTimeout(eqT);eqT=setTimeout(()=>{S.enterQ=e.target.value;renderEnter();const q=$("enterQ");q.focus();q.setSelectionRange(q.value.length,q.value.length)},300)});
+  const sa=$("shareAwaited");if(sa)sa.addEventListener("click",()=>{
+    const by={};missing.forEach(x=>(by[x.division]=by[x.division]||[]).push(x));
+    const L=[`*${panelName()} · results still awaited*`,`${missing.length} of ${scope.length} units${S.enterDiv?" in "+S.enterDiv:""} · ${new Date().toLocaleString()}`];
+    for(const[d,xs]of Object.entries(by)){L.push("",`*${d}* (${xs.length})`);xs.forEach(x=>L.push(`• ${x.name}${x.rep?" — "+x.rep+(x.phone?" "+x.phone:""):""}`))}
+    L.push("","Polling agents: please send the result message from the app.");
+    shareText(L.join("\n"),"Awaited results")});
+  $("pasteGo").addEventListener("click",importPasted);
+  if(u){
+    const f=$("resForm");
+    const check=()=>{
+      const reg=n(f.elements.registered.value),cast=n(f.elements.cast.value),rej=n(f.elements.rejected.value),w=[];
+      if(reg&&cast>reg)w.push(`Votes cast (${cast}) is more than registered voters (${reg}).`);
+      if(rej>cast&&cast)w.push("Rejected votes are more than votes cast.");
+      for(const b of ballotsFor(S.contests.filter(c=>applies(c,u))))if(panelMode(b.scope)){
+        const s=[...f.querySelectorAll(`input[data-ps="${b.scope}"]`)].reduce((t,i)=>t+n(i.value),0);
+        if(cast&&s>cast-rej)w.push(`${b.title}: panel votes add up to ${s}, more than the ${cast-rej} valid votes.`);
+      }
+      for(const c of S.contests.filter(c=>applies(c,u)&&!panelMode(c.scope))){
+        const s=[...f.querySelectorAll(`input[data-c="${CSS.escape(c.id)}"]`)].reduce((t,i)=>t+n(i.value),0);
+        const cap=(cast-rej)*(c.seats||1);
+        if(cast&&s>cap)w.push(`${c.name}: candidate votes add up to ${s}, more than the ${cap} valid ${c.seats>1?"vote slots":"votes"}.`);
+      }
+      $("resWarn").innerHTML=w.map(x=>`<span>⚠ ${esc(x)}</span>`).join("");
+    };
+    f.addEventListener("input",check);check();
+    f.addEventListener("submit",async e=>{e.preventDefault();
+      const votes={};let panels={};
+      // panel ballots: each panel's stamp count becomes the vote of that panel's candidate in every post on that ballot
+      f.querySelectorAll("input[data-ps]").forEach(i=>{if(i.value!=="")(panels[i.dataset.ps]=panels[i.dataset.ps]||{})[i.dataset.pk]=n(i.value)});
+      for(const c of S.contests.filter(c=>applies(c,u)&&panelMode(c.scope))){const pv=panels[c.scope]||{};votes[c.id]={};for(const k of c.candidates||[]){const key=panelKey(k);if(key in pv)votes[c.id][k.id]=pv[key]}}
+      // candidate ballots: votes typed per candidate
+      f.querySelectorAll("input[data-c]").forEach(i=>{(votes[i.dataset.c]=votes[i.dataset.c]||{});if(i.value!=="")votes[i.dataset.c][i.dataset.k]=n(i.value)});
+      if(!Object.keys(panels).length)panels=null;
+      // the signed result sheet photo is required evidence (skipped only where the browser can't store photos)
+      const pend=S.pendingPhoto&&S.pendingPhoto.unitId===u.id?S.pendingPhoto:null;
+      if(!pend&&!hasPhoto(u.id)&&!PH.failed){toast("Take a photo of the signed result sheet first");const b=$("phCamBtn");b&&b.scrollIntoView({block:"center"});return}
+      let photo=r&&r.photo||null;
+      if(pend){try{await putPhoto(u.id,pend);photo=photoMeta(pend);S.pendingPhoto=null}catch(err){toast("The photo couldn't be stored on this phone. Free some space and try again.");return}}
+      else if(hasPhoto(u.id)&&!photo){const ph=await getPhoto(u.id).catch(()=>null);if(ph)photo=photoMeta(ph)}
+      const body={unitId:u.id,panels,photo,registered:n(f.elements.registered.value),cast:n(f.elements.cast.value),rejected:n(f.elements.rejected.value),votes,status:f.elements.status.value,enteredBy:f.elements.enteredBy.value.trim(),note:f.elements.note.value.trim(),updatedAt:new Date().toISOString()};
+      await save("results","r_"+u.id,body,"Result saved for "+u.name);
+    });
+    wirePhotoPanel(u);
+    if(r){
+      wireOfficeBox(u);
+      $("resDel").addEventListener("click",e=>{const b=e.currentTarget;if(!b.dataset.armed){b.dataset.armed="1";b.textContent="Tap again to delete";return}delPhoto(u.id);remove("results","r_"+u.id)});
+    }
+  }
+}
+document.addEventListener("click",e=>{
+  const a=e.target.closest("[data-pick],[data-add-contest],[data-edit-contest],[data-rgo],[data-load-ballot],[data-rdiv]");if(!a)return;
+  if(a.dataset.rdiv){S.enterDiv=a.dataset.rdiv;S.rview="enter";renderResults();window.scrollTo({top:0});return}
+  if(a.dataset.loadBallot){const k=loadBallot(a.dataset.loadBallot);if(k.d||k.p){persist();render()}toast(k.d||k.p?`Added ${k.d} ${a.dataset.loadBallot} Division posts${k.p?` and ${k.p} Provincial posts`:""}`:`${a.dataset.loadBallot} posts are already set up`);return}
+  if(a.dataset.pick!==undefined){e.preventDefault();S.enterUnit=a.dataset.pick;S.pendingPhoto=null;renderEnter();window.scrollTo({top:0,behavior:"smooth"});return}
+  if(a.dataset.addContest!==undefined){contestForm();return}
+  if(a.dataset.editContest){contestForm(S.contests.find(c=>c.id===a.dataset.editContest));return}
+  if(a.dataset.rgo){S.rview=a.dataset.rgo;renderResults()}
+});
+
+/* ---- messages: human text + a code line other phones can import ---- */
+const enc=o=>btoa(unescape(encodeURIComponent(JSON.stringify(o))));
+const dec=s=>JSON.parse(decodeURIComponent(escape(atob(s))));
+function unitMessage(u,r){
+  const cs=S.contests.filter(c=>applies(c,u)&&hasVotes(r,c));
+  const lines=[`*PPLA unofficial result*`,`${u.name} (${u.division})${u.emis?" · EMIS "+u.emis:""}`,`Registered ${n(r.registered)} · Cast ${n(r.cast)} · Rejected ${n(r.rejected)}`];
+  for(const b of ballotsFor(S.contests.filter(c=>applies(c,u)))){
+    const pv=r.panels&&r.panels[b.scope];
+    if(panelMode(b.scope)&&pv){lines.push("",`*${b.title}* (panel votes)`);b.panels.map(pn=>[pn,n(pv[pn.key])]).sort((a,b)=>b[1]-a[1]).forEach(([pn,v])=>lines.push(`${pn.label}: ${v}`));continue}
+    for(const c of cs.filter(c=>c.scope===b.scope)){lines.push("",`*${c.name}*`);(c.candidates||[]).map(k=>[k,n(r.votes[c.id][k.id])]).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>lines.push(`${k.name}${k.panel&&k.panel!==k.name?" ("+k.panel+")":""}: ${v}`))}}
+  lines.push("",r.photo?`Result-sheet photo: taken ${new Date(r.photo.at).toLocaleString()} (ref ${r.photo.h8}), sent separately`:"Result-sheet photo: NOT attached");
+  lines.push(`Status: ${r.status==="verified"?"verified":"provisional"}${r.enteredBy?" · by "+r.enteredBy:""}${r.note?" · "+r.note:""}`);
+  lines.push("#PPLA1:"+enc({u:{id:u.id,emis:u.emis||"",name:u.name,division:u.division,district:u.district,members:u.members,updatedAt:u.updatedAt||""},c:cs.map(c=>({id:c.id,name:c.name,scope:c.scope,division:c.division,unitId:c.unitId,seats:c.seats,candidates:c.candidates,updatedAt:c.updatedAt||""})),r}));
+  return lines.join("\n");
+}
+function importPasted(){
+  const txt=$("pasteBox").value, m=[...txt.matchAll(/#PPLA1:([A-Za-z0-9+/=]+)/g)];
+  if(!m.length){toast("No result code found. Paste the whole message including the #PPLA1 line.");return}
+  const inc={units:[],acts:[],team:[],contests:[],results:[]};let bad=0;
+  for(const x of m){try{const p=dec(x[1]);inc.units.push(p.u);inc.contests.push(...p.c);inc.results.push(p.r)}catch(e){bad++}}
+  // Pasting is deliberate: a result deleted earlier on this phone comes back when its message is pasted again.
+  for(const r of inc.results)if(r&&r.unitId)delete S.deleted["results/r_"+r.unitId];
+  const seen=new Set();inc.contests=inc.contests.filter(c=>!seen.has(c.id)&&seen.add(c.id));
+  // A message carries only a slim copy of the unit: use it to add an unknown college, never to overwrite this desk's rep, notes or support.
+  const have=new Set(S.units.map(u=>u.id)), useen=new Set();inc.units=inc.units.filter(u=>u&&u.id&&!have.has(u.id)&&!useen.has(u.id)&&useen.add(u.id));
+  const r=mergeIncoming(inc,{},null);persist();$("pasteBox").value="";render();
+  toast(`Imported ${m.length-bad} result${m.length-bad===1?"":"s"}: ${r.added} new, ${r.updated} updated${bad?` · ${bad} unreadable`:""}`);
+}
+function shareText(text,title){
+  openSheet(`<h2 id="sheetTitle">${esc(title)}</h2><form class="f"><textarea class="code full" readonly id="shareBox" rows="12">${esc(text)}</textarea>
+    <div class="formfoot"><span></span><div class="btnrow"><button type="button" class="btn" data-close>Close</button>${AB||navigator.share?`<button type="button" class="btn" id="shareNative">Share to WhatsApp…</button>`:""}<button type="submit" class="btn primary">Copy</button></div></div></form>`,
+  async()=>{try{await navigator.clipboard.writeText(text);toast("Copied. Paste it into WhatsApp.")}catch(e){const b=$("shareBox");b.focus();b.select();try{document.execCommand("copy");toast("Copied")}catch(_){toast("Select the text and copy it")}}});
+  const sn=$("shareNative");if(sn)sn.addEventListener("click",()=>{if(AB)AB.shareText(title,text);else navigator.share({title,text}).catch(()=>{})});
+}
+
+/* ---- tally ---- */
+function renderTally(){
+  const withRes=S.units.filter(u=>resFor(u.id));
+  const reg=withRes.reduce((s,u)=>s+n(resFor(u.id).registered),0), cast=withRes.reduce((s,u)=>s+n(resFor(u.id).cast),0);
+  const ver=S.results.filter(r=>r.status==="verified"&&S.units.some(u=>u.id===r.unitId)).length;
+  if(!S.contests.length){$("rTally").innerHTML=`<div class="empty"><b>Nothing to tally yet</b><span>Set up the posts and candidates, then enter each unit's raw figures as they come in on polling day.</span><button class="btn small primary" data-rgo="setup" type="button">Set up posts</button></div>`;return}
+  let html=`<div class="kpis">
+    <div class="kpi"><span class="lbl">Units reported</span><span class="num">${withRes.length} / ${S.units.length}</span><span class="sub">${ver} verified · ${withRes.filter(u=>hasPhoto(u.id)).length} with sheet photo</span></div>
+    <div class="kpi"><span class="lbl">Votes cast</span><span class="num">${cast.toLocaleString()}</span><span class="sub">in reported units</span></div>
+    <div class="kpi"><span class="lbl">Turnout</span><span class="num">${reg?pct(cast,reg)+"%":"–"}</span><span class="sub">of ${reg.toLocaleString()} registered</span></div>
+  </div><div class="btnrow"><button class="btn" id="shareSummary" type="button">Share summary as message</button></div>`;
+  const list=S.contests.slice().sort(cmpContest);
+  // Main Office view: which divisions have reported, and with how many result-sheet photos
+  const byDiv=DIVISIONS.map(d=>{const us=S.units.filter(u=>u.division===d),rs=us.filter(u=>resFor(u.id));return {d,n:us.length,r:rs.length,p:rs.filter(u=>hasPhoto(u.id)).length}}).filter(x=>x.n);
+  html+=`<div class="card"><div class="sechead"><h3>Reporting to ${esc(officeName())}</h3><span class="note">results and sheet photos received, by division</span></div><div class="tscroll"><table><thead><tr><th>Division</th><th class="r">Reported</th><th>Progress</th><th class="r">Sheet photos</th></tr></thead><tbody>${byDiv.map(x=>`<tr class="click" data-rdiv="${esc(x.d)}" tabindex="0"><td><b>${esc(x.d)}</b></td><td class="r">${x.r} / ${x.n}</td><td><div class="cov"><div class="track"><div class="fill" style="width:${pct(x.r,x.n)}%"></div></div><span>${pct(x.r,x.n)}%</span></div></td><td class="r">${x.p} / ${x.r}</td></tr>`).join("")}</tbody></table></div></div>`;
+  html+=panelStandings();
+  let lastScope="";
+  for(const c of list){
+    if(c.scope!==lastScope){html+=`<h2 style="margin:8px 0 0;font-size:22px">${esc(SCOPES[c.scope])} posts</h2>`;lastScope=c.scope}
+    const t=tally(c);
+    const status=!t.reported?"No units have reported for this post yet.":
+      !t.contested?"Uncontested.":
+      t.allIn?`All ${t.elig.length} units in. Final unofficial margin: ${t.margin} vote${t.margin===1?"":"s"}.`:
+      t.safe?`Lead of ${t.margin} cannot be overturned by the ${t.remaining.toLocaleString()} voters in units yet to report.`:
+      t.unknown?`Margin ${t.margin}. ${t.elig.length-t.reported} unit${t.elig.length-t.reported===1?"":"s"} still to report; faculty strength not entered for ${t.unknown} of them, so the lead can't be called safe yet.`:
+      `Margin ${t.margin}. About ${t.remaining.toLocaleString()} voters in ${t.elig.length-t.reported} unit${t.elig.length-t.reported===1?"":"s"} still to report.`;
+    html+=`<div class="card"><div class="sechead"><h3>${esc(c.name)}${t.seats>1?` <span class="note">· ${t.seats} seats</span>`:""}</h3><span class="note">${esc(scopeLabel(c))} · ${t.reported}/${t.elig.length} units</span></div>
+      <div class="tally">${t.rows.map((k,i)=>`<div class="trow${i<t.seats&&t.sum?" lead":""}${isOurs(k)?" ours":""}"><span class="rk">${i+1}</span><span class="who"><b>${esc(k.name)}</b>${k.panel&&k.panel!==k.name?`<small>${esc(k.panel)}</small>`:""}${isOurs(k)?` <span class="symtag">${TORCH_SVG}Torch</span>`:""}</span><span class="vv">${k.v.toLocaleString()}<small>${t.sum?Math.round(k.v*1000/t.sum)/10:0}%</small></span><span class="bar"><span style="width:${t.rows[0].v?(k.v*100/t.rows[0].v).toFixed(1):0}%"></span></span></div>`).join("")}</div>
+      <div class="tstat${t.safe||t.allIn?" safe":""}">${t.reported&&t.contested&&!t.allIn&&!t.safe?"Leading · ":""}${t.safe&&!t.allIn?"Unassailable lead (unofficial) · ":""}${esc(status)}</div></div>`;
+  }
+  $("rTally").innerHTML=html;
+  $("shareSummary").addEventListener("click",()=>{
+    const L=[`*${panelName()} · unofficial preliminary tally*`,`${withRes.length} of ${S.units.length} units reported · turnout ${reg?pct(cast,reg)+"%":"–"}`,`Time: ${new Date().toLocaleString()}`];
+    for(const c of list){const t=tally(c);if(!t.reported)continue;L.push("",`*${c.name}* (${scopeLabel(c)}, ${t.reported}/${t.elig.length} units)`);
+      t.rows.forEach((k,i)=>L.push(`${i<t.seats?"▶ ":"   "}${k.name}${k.panel&&k.panel!==k.name?" ("+k.panel+")":""}: ${k.v}`));
+      if(t.safe&&!t.allIn)L.push("Lead cannot be overturned by remaining units.")}
+    L.push("","_Unofficial. Not the declared result._");
+    shareText(L.join("\n"),"Tally summary");
+  });
+}
+
+/* ---------- over-the-air updates ----------
+   Web app: the page is re-fetched whenever it is opened online (sw.js), so publishing a new
+   index.html + version.json updates every phone. Android app: the app downloads the newer page
+   from the same web address and serves it in place of its built-in copy (same storage origin,
+   so data stays). Both read version.json to know whether a newer build exists. */
+function verText(){return `Version ${APP_VERSION} (build ${APP_BUILD})`+(AB?" · Android app":"")}
+async function checkUpdate(manual){
+  if(AB&&AB.checkUpdate){AB.checkUpdate(!!manual);if(manual)toast("Checking for updates…");return}
+  if(!/^https?:$/.test(location.protocol)){if(manual)toast("Updates need the app opened from its web link");return}
+  try{
+    const v=await fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(r=>{if(!r.ok)throw 0;return r.json()});
+    if(n(v.build)>APP_BUILD){
+      try{const reg=await navigator.serviceWorker.getRegistration();if(reg)await reg.update()}catch(e){}
+      showUpdateReady(v.version||v.build,()=>location.reload());
+    }else if(manual)toast("You have the latest version ("+APP_VERSION+")");
+  }catch(e){if(manual)toast("Couldn't reach the update server. Check the internet and try again.")}
+}
+function showUpdateReady(ver,apply){
+  const b=$("updBanner");b.hidden=false;b.innerHTML=`<b>Update ready: version ${esc(ver)}.</b> Your entries are kept. <button class="btn small primary" id="updNow" type="button">Restart now</button>`;
+  $("updNow").addEventListener("click",apply);
+}
+// called by the Android app once it has downloaded a newer page
+window.pplaUpdateReady=ver=>showUpdateReady(ver,()=>{if(AB&&AB.restartApp)AB.restartApp();else location.reload()});
+window.pplaUpdateStatus=msg=>toast(msg);
+$("btnUpdate").addEventListener("click",()=>checkUpdate(true));
+// tell the user once when a new version has arrived
+try{const last=+localStorage.getItem("ppla.build")||0;if(last&&last<APP_BUILD)setTimeout(()=>toast("Updated to version "+APP_VERSION),800);localStorage.setItem("ppla.build",APP_BUILD)}catch(e){}
+
+/* ---------- install (PWA) ---------- */
+let deferredPrompt=null;
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;$("btnInstall").hidden=false});
+$("btnInstall").addEventListener("click",async()=>{if(!deferredPrompt)return;deferredPrompt.prompt();try{await deferredPrompt.userChoice}catch(e){}deferredPrompt=null;$("btnInstall").hidden=true});
+window.addEventListener("appinstalled",()=>{$("btnInstall").hidden=true;toast("PPLA Desk installed")});
+if(!AB&&"serviceWorker" in navigator&&/^https?:$/.test(location.protocol))window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
+
+/* ---------- boot ---------- */
+try{const t=localStorage.getItem("ppla.tab");if(t&&$("tab-"+t))S.tab=t;const d=localStorage.getItem("ppla.div");if(d&&DIVISIONS.includes(d))S.div=d}catch(e){storageOK=false}
+loadLocal();
+if(!storageOK)$("offline").hidden=false;
+// First run on a new device: start with the full Punjab colleges directory.
+if(freshDevice&&storageOK){loadDirectory();persist()}
+fillDistricts();
+setTab(S.tab);
+loadPhotoKeys();
+if(AB&&AB.appReady)AB.appReady(APP_BUILD);
+if(navigator.onLine!==false)setTimeout(()=>checkUpdate(false),4000);
+})();
+</script>
+</body>
+</html>
