@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>PPLA Election Manager</title>
 <meta name="theme-color" content="#3a3fb0">
-<meta name="ppla-build" content="15">
+<meta name="ppla-build" content="16">
 <meta name="description" content="Campaign manager and unofficial results tally for PPLA elections">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png" type="image/png">
@@ -412,7 +412,7 @@ const FOCUS=["Media & social media","Women colleges","Polling agents & polling d
 const UNIT_ROLES=["Unit coordinator","Unit representative"];
 const LEVELS={unit:"Unit",division:"Division",centre:"Centre"};
 // Release numbers: scripts/release.py keeps these, the ppla-build meta tag, version.json and sw.js in step.
-const APP_VERSION="1.5", APP_BUILD=15;
+const APP_VERSION="1.6", APP_BUILD=16;
 // Coalition this desk serves. The panel name in Settings overrides the display name.
 const COALITION="Nawa-e-Asatza & Ittehad-e-Asatza Punjab", SYMBOL="Torch (Mashal · مشعل)";
 const TORCH_SVG=`<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 3c7 9 13 14 13 23a13 13 0 0 1-26 0c0-7 4-10 7-15 1 4 3 6 5 7-1-6 0-10 1-15z" fill="var(--flame)"/><path d="M18 39h28l-3 6H21z" fill="var(--gold)"/><path d="M23 45h18l-6 17h-6z" fill="var(--handle)"/></svg>`;
@@ -1101,7 +1101,7 @@ function photoPanel(u,r){
     claimed?`<span class="warnlist" style="display:block">The agent's message says a photo was taken, but it hasn't reached this phone. Attach it from WhatsApp.</span>`:
     PH.failed?`<span class="warnlist" style="display:block">This browser can't store photos. Send the photo on WhatsApp separately.</span>`:
     `<span class="warnlist" style="display:block">Required: photograph the signed result sheet. The result can't be saved without it.</span>`;
-  return `<div class="full photobox"><div class="sechead"><b>Result-sheet photo</b>${pend||stored?`<button type="button" class="btn small" id="phView">View</button>`:""}</div>
+  return `<div class="full photobox"><div class="sechead"><b>Step 1 · Result-sheet photo <span class="ur" lang="ur" dir="rtl">نتیجہ شیٹ کی تصویر</span></b>${pend||stored?`<button type="button" class="btn small" id="phView">View</button>`:""}</div>
     <div class="phrow">${pend||stored?`<img id="phThumb" alt="Result sheet photo" class="phthumb">`:""}<div style="min-width:0;flex:1">${state}
     <div class="btnrow" style="margin-top:8px"><button type="button" class="btn small${pend||stored?"":" primary"}" id="phCamBtn">${pend||stored?"Retake photo":"Take photo of result sheet"}</button><button type="button" class="btn small" id="phPickBtn">Choose from gallery</button></div></div></div>
     <input type="file" id="phCam" accept="image/*" capture="environment" hidden><input type="file" id="phPick" accept="image/*" hidden></div>`;
@@ -1301,7 +1301,7 @@ function contestForm(c){
 /* ---- enter ---- */
 function renderEnter(){
   if(!S.units.length){$("rEnter").innerHTML=`<div class="empty"><b>No college units yet</b><span>Results are entered per unit. Add the units first, or load the central backup.</span><button class="btn small primary" data-add="unit" type="button">Add unit</button></div>`;return}
-  if(!S.contests.length){$("rEnter").innerHTML=`<div class="empty"><b>No posts set up</b><span>Add the posts and candidates first, or load the central backup that has them.</span><button class="btn small primary" data-rgo="setup" type="button">Set up posts</button></div>`;return}
+  if(!S.contests.length){$("rEnter").innerHTML=`<div class="empty"><b>No posts set up</b><span>Add the posts and candidates first, or load the central backup that has them. The result form, with the result-sheet photo, opens once posts are set up and a college is chosen.</span><button class="btn small primary" data-rgo="setup" type="button">Set up posts</button></div>`;return}
   const units=S.units.slice().sort((a,b)=>a.division.localeCompare(b.division)||a.name.localeCompare(b.name));
   if(S.enterUnit&&!units.some(u=>u.id===S.enterUnit))S.enterUnit="";
   // Picker narrowed to one division (and a search) so agents don't scroll through 861 colleges
@@ -1312,17 +1312,17 @@ function renderEnter(){
     const r=resFor(u.id);sel+=`<option value="${esc(u.id)}"${u.id===S.enterUnit?" selected":""}>${r?(r.status==="verified"?"✔✔ ":"✔ "):""}${r&&hasPhoto(u.id)?"📷 ":""}${esc(u.name)}</option>`}
   sel+="</optgroup>";
   const u=units.find(x=>x.id===S.enterUnit), r=u?resFor(u.id):null;
-  let form="";
+  let form=`<div class="banner">Choose the college above to open its result form: photo of the result sheet first, then the figures. <span class="ur" lang="ur" dir="rtl">نتیجہ فارم کھولنے کے لیے اوپر سے کالج منتخب کریں</span></div>`;
   if(u){
     const cs=S.contests.filter(c=>applies(c,u));
     form=`<div class="card"><div class="sechead"><h3>${esc(u.name)}</h3>${r?`<span class="pill p-${r.status==="verified"?"done":"planned"}">${r.status==="verified"?"verified":"provisional"}</span>`:""}</div>
     <form class="f" id="resForm">
+      ${photoPanel(u,r)}
       <label>Registered voters<input name="registered" type="number" min="0" inputmode="numeric" value="${esc(r?r.registered:n(u.members)||"")}"></label>
       <label>Votes cast<input name="cast" type="number" min="0" inputmode="numeric" value="${esc(r?r.cast:"")}"></label>
       <label>Rejected / invalid<input name="rejected" type="number" min="0" inputmode="numeric" value="${esc(r?r.rejected:"")}"></label>
       <label>Reported by<input name="enteredBy" value="${esc(r?r.enteredBy:"")}" placeholder="Polling agent"></label>
       ${!cs.length?`<div class="full note">No posts apply to this unit yet.</div>`:ballotsFor(cs).map(b=>ballotFields(b,cs,r)).join("")}
-      ${photoPanel(u,r)}
       <label>Status<select name="status">${opt([["provisional","Provisional (agent's count)"],["verified","Verified (matches signed result sheet)"]],r?r.status:"provisional")}</select></label>
       <label>Note<input name="note" value="${esc(r?r.note:"")}" placeholder="e.g. recount requested"></label>
       <div class="warnlist" id="resWarn"></div>
