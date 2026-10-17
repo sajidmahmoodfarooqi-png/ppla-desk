@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>PPLA Election Manager</title>
 <meta name="theme-color" content="#3a3fb0">
-<meta name="ppla-build" content="14">
+<meta name="ppla-build" content="15">
 <meta name="description" content="Campaign manager and unofficial results tally for PPLA elections">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png" type="image/png">
@@ -209,6 +209,11 @@ nav.tabs .ur{font-size:14px}
 .bi{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:10px}
 .bi>.ur{margin-left:auto;font-size:.68em;color:var(--muted)}
 .kpi .lbl.bi>.ur{font-size:12px}
+.btn .ur,.linkbtn .ur,.chip .ur,.seg .ur{font-size:.85em;line-height:1;margin-left:2px;font-weight:400}
+.seg .seglbl.bi>.ur{margin-left:auto;font-size:13px}
+.seg label span.ur{display:inline;border:0;padding:0;background:none;border-radius:0}
+.lblrow{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:8px}
+.lblrow>.ur{margin-left:auto;font-size:13px;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -407,7 +412,7 @@ const FOCUS=["Media & social media","Women colleges","Polling agents & polling d
 const UNIT_ROLES=["Unit coordinator","Unit representative"];
 const LEVELS={unit:"Unit",division:"Division",centre:"Centre"};
 // Release numbers: scripts/release.py keeps these, the ppla-build meta tag, version.json and sw.js in step.
-const APP_VERSION="1.4", APP_BUILD=14;
+const APP_VERSION="1.5", APP_BUILD=15;
 // Coalition this desk serves. The panel name in Settings overrides the display name.
 const COALITION="Nawa-e-Asatza & Ittehad-e-Asatza Punjab", SYMBOL="Torch (Mashal · مشعل)";
 const TORCH_SVG=`<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 3c7 9 13 14 13 23a13 13 0 0 1-26 0c0-7 4-10 7-15 1 4 3 6 5 7-1-6 0-10 1-15z" fill="var(--flame)"/><path d="M18 39h28l-3 6H21z" fill="var(--gold)"/><path d="M23 45h18l-6 17h-6z" fill="var(--handle)"/></svg>`;
@@ -1523,20 +1528,43 @@ fillDistricts();
 setTab(S.tab);
 loadPhotoKeys();
 // Urdu beside the English headings, card titles and figure labels, wherever they are drawn
-const UR={"Support across Punjab":"پنجاب بھر میں حمایت","Division scoreboard":"ڈویژن اسکور بورڈ","Priority targets":"ترجیحی اہداف","Next 14 days":"اگلے 14 دن","Units needing a visit":"دورہ طلب یونٹس","District scoreboard":"ضلعی اسکور بورڈ","Divisional team":"ڈویژنل ٹیم","Outreach in this division":"اس ڈویژن میں رابطہ مہم","Units":"یونٹس","College units":"کالج یونٹس","Outreach log":"رابطہ مہم کا ریکارڈ","Coming up":"آئندہ","Completed & past":"مکمل اور گزشتہ","Campaign team":"انتخابی ٹیم","Coordinator gaps":"خالی کوآرڈینیٹر عہدے","Our candidates & seats":"ہمارے امیدوار اور نشستیں","Data & sharing":"ڈیٹا اور شیئرنگ","Save a backup":"بیک اپ محفوظ کریں","Load a backup":"بیک اپ لوڈ کریں","App version & updates":"ایپ ورژن اور اپڈیٹس","Punjab colleges directory":"پنجاب کالجز ڈائریکٹری","Update units from a spreadsheet":"اسپریڈشیٹ سے یونٹس اپڈیٹ کریں","Install on your phone":"فون پر انسٹال کریں","Clear this device":"اس ڈیوائس کا ڈیٹا صاف کریں","Panel standings":"پینل پوزیشن","Posts on the ballot":"بیلٹ پر عہدے","How voters mark each ballot":"ووٹر بیلٹ پر نشان کیسے لگاتے ہیں","Paste result messages":"نتائج کے پیغامات چسپاں کریں","Provincial posts":"صوبائی عہدے","Divisional posts":"ڈویژنل عہدے","Unit level posts":"یونٹ سطح کے عہدے","Centre — Punjab":"مرکز — پنجاب","Division — Directorates":"ڈویژن — ڈائریکٹوریٹس","District":"ضلع","Unit — Colleges":"یونٹ — کالجز","Focal persons":"فوکل پرسنز","Campaign settings":"انتخابی ترتیبات","Add college unit":"کالج یونٹ شامل کریں","Edit unit":"یونٹ میں ترمیم","Plan outreach":"رابطہ مہم کی منصوبہ بندی","Edit outreach":"رابطہ مہم میں ترمیم","Add team member":"ٹیم رکن شامل کریں","Edit team member":"ٹیم رکن میں ترمیم","Add post":"عہدہ شامل کریں","Edit post":"عہدے میں ترمیم","Result sheet photo":"نتیجہ شیٹ کی تصویر","Units registered":"رجسٹرڈ یونٹس","Unit coordinators in place":"مقرر یونٹ کوآرڈینیٹرز","Voters (faculty)":"ووٹرز (اساتذہ)","Contacted":"رابطہ ہوا","Favourable":"حامی","Outreach done":"مکمل رابطہ مہم","Voters":"ووٹرز","Outreach":"رابطہ مہم","Divisional coordinators":"ڈویژنل کوآرڈینیٹرز","District coordinators":"ضلعی کوآرڈینیٹرز","Unit coordinators":"یونٹ کوآرڈینیٹرز","Units reported":"رپورٹ شدہ یونٹس","Votes cast":"ڈالے گئے ووٹ","Turnout":"ٹرن آؤٹ"};
+const UR={"Support across Punjab":"پنجاب بھر میں حمایت","Division scoreboard":"ڈویژن اسکور بورڈ","Priority targets":"ترجیحی اہداف","Next 14 days":"اگلے 14 دن","Units needing a visit":"دورہ طلب یونٹس","District scoreboard":"ضلعی اسکور بورڈ","Divisional team":"ڈویژنل ٹیم","Outreach in this division":"اس ڈویژن میں رابطہ مہم","Units":"یونٹس","College units":"کالج یونٹس","Outreach log":"رابطہ مہم کا ریکارڈ","Coming up":"آئندہ","Completed & past":"مکمل اور گزشتہ","Campaign team":"انتخابی ٹیم","Coordinator gaps":"خالی کوآرڈینیٹر عہدے","Our candidates & seats":"ہمارے امیدوار اور نشستیں","Data & sharing":"ڈیٹا اور شیئرنگ","Save a backup":"بیک اپ محفوظ کریں","Load a backup":"بیک اپ لوڈ کریں","App version & updates":"ایپ ورژن اور اپڈیٹس","Punjab colleges directory":"پنجاب کالجز ڈائریکٹری","Update units from a spreadsheet":"اسپریڈشیٹ سے یونٹس اپڈیٹ کریں","Install on your phone":"فون پر انسٹال کریں","Clear this device":"اس ڈیوائس کا ڈیٹا صاف کریں","Panel standings":"پینل پوزیشن","Posts on the ballot":"بیلٹ پر عہدے","How voters mark each ballot":"ووٹر بیلٹ پر نشان کیسے لگاتے ہیں","Paste result messages":"نتائج کے پیغامات چسپاں کریں","Provincial posts":"صوبائی عہدے","Divisional posts":"ڈویژنل عہدے","Unit level posts":"یونٹ سطح کے عہدے","Centre — Punjab":"مرکز — پنجاب","Division — Directorates":"ڈویژن — ڈائریکٹوریٹس","District":"ضلع","Unit — Colleges":"یونٹ — کالجز","Focal persons":"فوکل پرسنز","Campaign settings":"انتخابی ترتیبات","Add college unit":"کالج یونٹ شامل کریں","Edit unit":"یونٹ میں ترمیم","Plan outreach":"رابطہ مہم کی منصوبہ بندی","Edit outreach":"رابطہ مہم میں ترمیم","Add team member":"ٹیم رکن شامل کریں","Edit team member":"ٹیم رکن میں ترمیم","Add post":"عہدہ شامل کریں","Edit post":"عہدے میں ترمیم","Result sheet photo":"نتیجہ شیٹ کی تصویر","Units registered":"رجسٹرڈ یونٹس","Unit coordinators in place":"مقرر یونٹ کوآرڈینیٹرز","Voters (faculty)":"ووٹرز (اساتذہ)","Contacted":"رابطہ ہوا","Favourable":"حامی","Outreach done":"مکمل رابطہ مہم","Voters":"ووٹرز","Outreach":"رابطہ مہم","Divisional coordinators":"ڈویژنل کوآرڈینیٹرز","District coordinators":"ضلعی کوآرڈینیٹرز","Unit coordinators":"یونٹ کوآرڈینیٹرز","Units reported":"رپورٹ شدہ یونٹس","Votes cast":"ڈالے گئے ووٹ","Turnout":"ٹرن آؤٹ","Add member":"رکن شامل کریں","Add the first post":"پہلا عہدہ شامل کریں","Add unit":"یونٹ شامل کریں","Cancel":"منسوخ","Check for updates":"اپڈیٹ چیک کریں","Choose from gallery":"گیلری سے منتخب کریں","Clear all data":"تمام ڈیٹا صاف کریں","Close":"بند کریں","Copy":"کاپی","Delete":"حذف کریں","Delete result":"نتیجہ حذف کریں","Edit":"ترمیم","Edit posts & candidates":"عہدوں اور امیدواروں میں ترمیم","Enter unit result":"یونٹ کا نتیجہ درج کریں","Export CSV":"CSV ایکسپورٹ کریں","Import a .csv file":"CSV فائل امپورٹ کریں","Import results":"نتائج امپورٹ کریں","Install app":"ایپ انسٹال کریں","Load missing colleges":"باقی کالجز لوڈ کریں","Mark done":"مکمل","Merge a file":"فائل شامل کریں","Plan visit":"دورہ طے کریں","Posts & candidates":"عہدے اور امیدوار","Replace with a file":"فائل سے تبدیل کریں","Restart now":"ابھی دوبارہ کھولیں","Save":"محفوظ کریں","Save backup (.json)":"بیک اپ محفوظ کریں","Save result":"نتیجہ محفوظ کریں","Send backup on WhatsApp…":"واٹس ایپ پر بیک اپ بھیجیں","Send photo only":"صرف تصویر بھیجیں","Set panel name & polling day":"پینل کا نام اور پولنگ کا دن","Set up posts":"عہدے ترتیب دیں","Set up posts & candidates":"عہدے اور امیدوار ترتیب دیں","Share awaited list":"باقی یونٹس کی فہرست بھیجیں","Share division brief":"ڈویژن کی رپورٹ بھیجیں","Share message elsewhere…":"پیغام کہیں اور بھیجیں","Share summary as message":"خلاصہ بطور پیغام بھیجیں","Share to WhatsApp…":"واٹس ایپ پر بھیجیں","Share today's brief":"آج کی رپورٹ بھیجیں","Tally":"گنتی","Today":"آج","Units list (.csv)":"یونٹس کی فہرست","Use backup office number":"دفتر کا متبادل نمبر","View":"دیکھیں","WhatsApp":"واٹس ایپ","Take photo of result sheet":"نتیجہ شیٹ کی تصویر لیں","Retake photo":"دوبارہ تصویر لیں","1 · Send result message":"نتیجے کا پیغام بھیجیں","2 · Send result file + photo":"نتیجہ فائل اور تصویر بھیجیں","Tap again to delete":"حذف کرنے کے لیے دوبارہ دبائیں","Tap again to clear everything":"سب صاف کرنے کے لیے دوبارہ دبائیں","Strong support":"بھرپور حمایت","Leaning our way":"ہماری طرف مائل","Undecided":"غیر فیصلہ کن","Opposed":"مخالف","Not assessed":"جائزہ باقی","Support level":"حمایت کی سطح","Backup number (if the first is busy)":"متبادل نمبر (اگر پہلا مصروف ہو)","Candidates, one per line as Name | Panel":"امیدوار، ہر سطر میں ایک: نام | پینل","College (unit)":"کالج (یونٹ)","College name":"کالج کا نام","College unit":"کالج یونٹ","Contacted so far":"اب تک رابطہ","Date":"تاریخ","Designation":"عہدہ","Division":"ڈویژن","Election body":"انتخابی ادارہ","Faculty strength (voters)":"اساتذہ کی تعداد (ووٹرز)","Focal person for":"فوکل پرسن برائے","Last visit":"آخری دورہ","Lead person":"ذمہ دار فرد","Level":"سطح","Name":"نام","Note":"نوٹ","Notes (demands raised, commitments made, follow-ups)":"نوٹس","Notes (staff-room demands, pending promotions, influential seniors, rival activity)":"نوٹس","Office WhatsApp number":"دفتر کا واٹس ایپ نمبر","Office name":"دفتر کا نام","Panel / coalition name":"پینل / اتحاد کا نام","People reached":"رابطہ شدہ افراد","Phone / WhatsApp":"فون / واٹس ایپ","Polling day":"پولنگ کا دن","Post / office":"عہدہ","Registered voters":"رجسٹرڈ ووٹرز","Rejected / invalid":"مسترد / غلط","Rep phone / WhatsApp":"نمائندے کا فون / واٹس ایپ","Reported by":"رپورٹ کنندہ","Role":"کردار","Seats to fill":"نشستوں کی تعداد","Status":"حیثیت","Title":"عنوان","Type":"قسم","Unit representative":"یونٹ نمائندہ","Who votes for it":"کون ووٹ دیتا ہے","Works at level":"کام کی سطح"};
 const UR_START=[["Provincial ballot","صوبائی بیلٹ"],["Divisional ballot","ڈویژنل بیلٹ"],["Unit ballot","یونٹ بیلٹ"],["Reporting status","رپورٹنگ کی صورتحال"],["Reporting to","مرکزی دفتر کو رپورٹنگ"]];
-function urFor(t){if(UR[t])return UR[t];const p=UR_START.find(x=>t.startsWith(x[0]));return p?p[1]:""}
+function urFor(t){if(UR[t])return UR[t];const m=/^Load (.+) ballot$/.exec(t);if(m)return m[1]+" بیلٹ لوڈ کریں";if(t.startsWith("Show more colleges"))return "مزید کالجز";const p=UR_START.find(x=>t.startsWith(x[0]));return p?p[1]:""}
+function urSpan(ur){const s=document.createElement("span");s.className="ur";s.lang="ur";s.dir="rtl";s.textContent=ur;return s}
+// the element's own wording: its first text that isn't blank (support chips start with a colour dot)
+function ownText(el){for(const c of el.childNodes){if(c.nodeType===3&&c.textContent.trim())return c;if(c.nodeType===1&&c.tagName!=="I")return null}return null}
 function addUrdu(){
-  document.querySelectorAll("h2:not([data-ur]),h3:not([data-ur]),.kpi .lbl:not([data-ur])").forEach(el=>{
+  // headings, sheet titles, figure labels: Urdu at the right-hand edge
+  document.querySelectorAll("h2:not([data-ur]),h3:not([data-ur]),.kpi .lbl:not([data-ur]),.seglbl:not([data-ur])").forEach(el=>{
     el.dataset.ur="1";
-    const first=el.firstChild;if(!first||first.nodeType!==3)return;
-    const ur=urFor(first.textContent.trim());if(!ur)return;
-    const s=document.createElement("span");s.className="ur";s.lang="ur";s.dir="rtl";s.textContent=ur;
-    el.classList.add("bi");el.appendChild(s);
+    const t=el.firstChild;if(!t||t.nodeType!==3)return;
+    const ur=urFor(t.textContent.trim());if(!ur)return;
+    el.classList.add("bi");el.appendChild(urSpan(ur));
+  });
+  // buttons and choice chips: Urdu right after the English
+  document.querySelectorAll(".btn:not([data-ur]),.linkbtn:not([data-ur]),.chip:not([data-ur]),.seg label>span:not([data-ur])").forEach(el=>{
+    el.dataset.ur="1";
+    if(el.querySelector(".ur"))return;
+    const t=ownText(el);if(!t)return;
+    const ur=urFor(t.textContent.trim());if(!ur)return;
+    t.after(" ",urSpan(ur));
+  });
+  // form field labels: English on the left, Urdu on the right, above the box
+  document.querySelectorAll("form.f label:not([data-ur])").forEach(el=>{
+    el.dataset.ur="1";
+    if(el.closest(".seg"))return;
+    const t=el.firstChild;if(!t||t.nodeType!==3)return;
+    const ur=urFor(t.textContent.trim());if(!ur)return;
+    const row=document.createElement("span");row.className="lblrow";
+    el.insertBefore(row,t);row.append(t,urSpan(ur));
   });
 }
 let urQueued=false;
-new MutationObserver(()=>{if(urQueued)return;urQueued=true;queueMicrotask(()=>{urQueued=false;addUrdu()})}).observe(document.body,{childList:true,subtree:true});
+new MutationObserver(ms=>{
+  // a button whose words were swapped in code ("Tap again to delete") loses its Urdu: let it be done again
+  for(const m of ms){const el=m.target;if(el.nodeType===1&&el.dataset&&el.dataset.ur&&!el.querySelector(".ur"))delete el.dataset.ur}
+  if(urQueued)return;urQueued=true;queueMicrotask(()=>{urQueued=false;addUrdu()})}).observe(document.body,{childList:true,subtree:true});
 addUrdu();
 if(AB&&AB.appReady)AB.appReady(APP_BUILD);
 if(navigator.onLine!==false)setTimeout(()=>checkUpdate(false),4000);

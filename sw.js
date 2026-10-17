@@ -1,6 +1,6 @@
 // PPLA Desk service worker: lets the app open and work with no signal.
 // Bump VERSION whenever index.html changes so phones pick up the new copy.
-const VERSION = "ppla-desk-1.4-b14";
+const VERSION = "ppla-desk-1.5-b15";
 const SHELL = [
   "./",
   "./index.html",
