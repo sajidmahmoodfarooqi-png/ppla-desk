@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>PPLA Election Manager</title>
 <meta name="theme-color" content="#3a3fb0">
-<meta name="ppla-build" content="26">
+<meta name="ppla-build" content="27">
 <meta name="description" content="Campaign manager and unofficial results tally for PPLA elections">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png" type="image/png">
@@ -431,7 +431,7 @@ const FOCUS=["Media & social media","Women colleges","Polling agents & polling d
 const UNIT_ROLES=["Unit coordinator","Unit representative"];
 const LEVELS={unit:"Unit",division:"Division",centre:"Centre"};
 // Release numbers: scripts/release.py keeps these, the ppla-build meta tag, version.json and sw.js in step.
-const APP_VERSION="1.16", APP_BUILD=26;
+const APP_VERSION="1.17", APP_BUILD=27;
 // Coalition this desk serves. The panel name in Settings overrides the display name.
 const TORCH_SVG=`<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 3c7 9 13 14 13 23a13 13 0 0 1-26 0c0-7 4-10 7-15 1 4 3 6 5 7-1-6 0-10 1-15z" fill="var(--flame)"/><path d="M32 17c3 5 7 8 7 13a7 7 0 0 1-14 0c0-4 2-6 3-9 1 2 2 3 4 4 0-3 0-5 0-8z" fill="var(--flame-core)"/><path d="M18 39h28l-3 6H21z" fill="var(--gold)"/><path d="M23 45h18l-6 17h-6z" fill="var(--handle)"/></svg>`, EAGLE_SVG=`<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 14c-3 0-5 2-5 5v4C20 21 10 16 3 8c2 12 9 21 20 25l-7 3h9l3 2v9l-5 9h18l-5-9v-9l3-2h9l-7-3c11-4 18-13 20-25-7 8-17 13-24 15v-4c0-3-2-5-5-5z" fill="var(--eagle)"/><path d="M29 18l-5 2 5 1z" fill="var(--gold)"/><circle cx="33" cy="18" r="1.4" fill="#fff"/></svg>`, LION_SVG=`<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 3l6 7 9-3 1 9 9 4-4 8 6 7-8 4 1 9-9-1-4 8-7-5-7 5-4-8-9 1 1-9-8-4 6-7-4-8 9-4 1-9 9 3z" fill="var(--lion)"/><circle cx="32" cy="34" r="15" fill="var(--lion-face)"/><circle cx="26.5" cy="31" r="2" fill="#2a1a0e"/><circle cx="37.5" cy="31" r="2" fill="#2a1a0e"/><path d="M28.5 37h7L32 41z" fill="#2a1a0e"/><path d="M27 44q5 3 10 0" stroke="#2a1a0e" stroke-width="1.6" fill="none"/></svg>`;
 // The three panels contesting the PPLA elections, shown alike. Symbol words are matched first, then panel names:
@@ -996,7 +996,7 @@ $("fileIn").addEventListener("change",async e=>{
   // result files from polling agents carry the result-sheet photo
   let got=0;for(const[unitId,ph]of Object.entries(d.photos||{})){if(ph&&ph.data){try{await putPhoto(unitId,ph);got++}catch(e){}}}
   if(importMode==="replace"){Object.assign(S,inc);S.cfg=d.cfg||{};S.deleted=d.deleted||{};persist();render();toast("Loaded "+f.name+(got?` with ${got} photo${got===1?"":"s"}`:""));return}
-  const r=mergeIncoming(inc,d.deleted,d.cfg);if(got){persist();render();toast(`Merged: ${r.added} new, ${r.updated} updated, ${got} result-sheet photo${got===1?"":"s"}`);return}
+  const r=mergeIncoming(inc,d.deleted,d.cfg);nameRivals();if(got){persist();render();toast(`Merged: ${r.added} new, ${r.updated} updated, ${got} result-sheet photo${got===1?"":"s"}`);return}
   persist();render();toast(`Merged: ${r.added} new, ${r.updated} updated`);
 });
 
@@ -1309,14 +1309,26 @@ const BALLOT_TEMPLATES=[
   ["Additional General Secretary (Women)","ایڈیشنل جنرل سیکرٹری خاتون","ضوفشاں کرن"],["Joint Secretary I","جوائنٹ سیکرٹری I","حافظ ثناءاللہ"],["Joint Secretary II","جوائنٹ سیکرٹری II","راجہ محمد اکرام"],["Joint Secretary (Women)","جوائنٹ سیکرٹری خاتون","شاہدہ پروین"],
   ["Secretary Publications","سیکرٹری نشر و اشاعت","وقاص رفیع"],["Finance Secretary","فنانس سیکرٹری","حافظ احمد علی"]]}];
 // Post names compared loosely: "Joint Secretary (I)" = "Joint Secretary 1", "President Punjab" = "President".
-const normPost=s=>String(s||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim().split(" ")
-  .filter(w=>w!=="punjab"&&w!=="division").map(w=>w==="1"?"i":w==="2"?"ii":w).join(" ");
+// Different panels word the same post differently; these count as one post.
+const POST_SAME={"secretary publications":"press secretary","information secretary":"press secretary","publication secretary":"press secretary",
+  "additional general secretary women":"additional secretary women","additional secretary":"additional secretary women","senior vice president women":"vice president women"};
+const normPost=s=>{const k=String(s||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim().split(" ")
+  .filter(w=>w!=="punjab"&&w!=="division").map(w=>w==="1"?"i":w==="2"?"ii":w).join(" ");return POST_SAME[k]||k};
 // A rival candidate's name from that panel's poster, only when exactly one candidate holds the post.
 function posterName(panel,scope,div,post){
   const party=partyOf({panel});if(!party||typeof CONTEST_PANELS==="undefined")return "";
   const hits=CONTEST_PANELS.filter(p=>p.level===scope&&(scope!=="division"||p.division===div)&&partyOf({panel:p.symbol+" "+p.panel})===party)
     .flatMap(p=>p.candidates).filter(c=>normPost(c.post)===normPost(post)&&!/واضح نہیں/.test(c.name));
   return hits.length===1?hits[0].name:"";
+}
+// Posts set up before v1.14 list Eagle and Lion by panel only: put the candidate's name in where the poster gives one.
+// The candidate keeps its id, so votes already entered stay with it.
+function nameRivals(){
+  const now=new Date().toISOString();let named=0;
+  for(const c of S.contests){const post=String(c.name||"").split(" · ")[0];
+    for(const k of c.candidates||[]){if(k.name!==k.panel)continue;const p=partyOf(k);if(!p||p.key==="torch")continue;
+      const nm=posterName(k.panel,c.scope,c.division,post);if(nm){k.name=nm;c.updatedAt=now;named++}}}
+  return named;
 }
 // Torch candidates from the ballot templates, shown beside the poster panels (no photos yet).
 function templatePanels(){
@@ -1600,6 +1612,7 @@ if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catc
 /* ---------- boot ---------- */
 try{const t=localStorage.getItem("ppla.tab");if(t&&$("tab-"+t))S.tab=t;const d=localStorage.getItem("ppla.div");if(d&&DIVISIONS.includes(d))S.div=d}catch(e){storageOK=false}
 loadLocal();
+if(nameRivals())persist();
 if(!storageOK)$("offline").hidden=false;
 // First run on a new device: start with the full Punjab colleges directory.
 if(freshDevice&&storageOK){loadDirectory();persist()}
