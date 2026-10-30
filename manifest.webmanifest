@@ -1,7 +1,7 @@
 {
   "name": "PPLA Election Manager",
   "short_name": "PPLA Desk",
-  "description": "Nawa-e-Asatza & Ittehad-e-Asatza Punjab (symbol: Torch) campaign manager and unofficial results tally for PPLA elections.",
+  "description": "Election monitoring for the PPLA elections: colleges, teams, the three contesting panels (Torch, Eagle, Lion) and an unofficial results tally.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

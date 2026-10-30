@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>PPLA Election Manager</title>
 <meta name="theme-color" content="#3a3fb0">
-<meta name="ppla-build" content="23">
+<meta name="ppla-build" content="24">
 <meta name="description" content="Campaign manager and unofficial results tally for PPLA elections">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png" type="image/png">
@@ -20,7 +20,7 @@
 :root{
   --bg:#eef1f5; --surface:#ffffff; --surface-2:#f6f8fb; --line:#d9dee8;
   --fg:#161a2b; --muted:#5c6378; --accent:#3a3fb0; --accent-ink:#ffffff; --accent-soft:#e3e4f8;
-  --gold:#c98a12; --flame:#e2601a; --flame-core:#f7b733; --handle:#7a4a17;
+  --gold:#c98a12; --flame:#e2601a; --flame-core:#f7b733; --handle:#7a4a17; --eagle:#2f6db3; --lion:#b5651d; --lion-face:#f0c27a;
   --strong:#1f8a52; --lean:#2f8fa8; --undec:#c98a12; --opp:#c2413a;
   --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
   --body:"Source Sans 3","Segoe UI",system-ui,sans-serif;
@@ -28,11 +28,11 @@
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#0f111a; --surface:#181b28; --surface-2:#1e2232; --line:#2b3046;
   --fg:#e8eaf3; --muted:#9aa1b8; --accent:#8e92ff; --accent-ink:#11132a; --accent-soft:#262a52;
-  --gold:#e8b44a; --flame:#ff7a33; --flame-core:#ffd060; --handle:#b07a3c; --strong:#4cc285; --lean:#5bbfd6; --undec:#e8b44a; --opp:#f07a72; color-scheme:dark}}
+  --gold:#e8b44a; --flame:#ff7a33; --flame-core:#ffd060; --handle:#b07a3c; --eagle:#6ea8ef; --lion:#d98a45; --lion-face:#f3d29a; --strong:#4cc285; --lean:#5bbfd6; --undec:#e8b44a; --opp:#f07a72; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0f111a; --surface:#181b28; --surface-2:#1e2232; --line:#2b3046;
   --fg:#e8eaf3; --muted:#9aa1b8; --accent:#8e92ff; --accent-ink:#11132a; --accent-soft:#262a52;
-  --gold:#e8b44a; --flame:#ff7a33; --flame-core:#ffd060; --handle:#b07a3c; --strong:#4cc285; --lean:#5bbfd6; --undec:#e8b44a; --opp:#f07a72; color-scheme:dark}
+  --gold:#e8b44a; --flame:#ff7a33; --flame-core:#ffd060; --handle:#b07a3c; --eagle:#6ea8ef; --lion:#d98a45; --lion-face:#f3d29a; --strong:#4cc285; --lean:#5bbfd6; --undec:#e8b44a; --opp:#f07a72; color-scheme:dark}
 
 *{box-sizing:border-box}
 :root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -62,6 +62,11 @@ h1{margin:2px 0 0;font-size:32px;line-height:1.05;font-weight:700}
 .urdu b{color:var(--flame);font-weight:700}
 .symtag{display:inline-flex;align-items:center;gap:3px;color:var(--flame);font-weight:700;font-size:12px}
 .symtag svg{width:14px;height:14px}
+.symtag.p-eagle{color:var(--eagle)} .symtag.p-lion{color:var(--lion)}
+.parties{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:6px}
+.party{display:flex;align-items:center;gap:6px;font-size:12px;line-height:1.25;color:var(--muted)}
+.party svg{width:30px;height:30px;flex:none}
+.party b{display:block;color:var(--ink)}
 .linkbtn{background:none;border:0;color:var(--accent);font-weight:600;padding:0;font-size:13px}
 nav.tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;margin:0 -4px}
 nav.tabs button{background:none;border:0;border-bottom:3px solid transparent;padding:10px 12px;font-family:var(--display);font-size:18px;font-weight:600;color:var(--muted);white-space:nowrap}
@@ -237,16 +242,13 @@ nav.tabs .ur{font-size:14px}
   <div class="wrap">
     <div class="headrow">
       <div class="brand">
-        <svg class="torch" viewBox="0 0 64 64" role="img" aria-label="Election symbol: Torch (Mashal)"><title>Election symbol: Torch (Mashal)</title>
-          <path d="M32 3c7 9 13 14 13 23a13 13 0 0 1-26 0c0-7 4-10 7-15 1 4 3 6 5 7-1-6 0-10 1-15z" fill="var(--flame)"/>
-          <path d="M32 17c3 5 7 8 7 13a7 7 0 0 1-14 0c0-4 2-6 3-9 1 2 2 3 4 4 0-3 0-5 0-8z" fill="var(--flame-core)"/>
-          <path d="M18 39h28l-3 6H21z" fill="var(--gold)"/>
-          <path d="M23 45h18l-6 17h-6z" fill="var(--handle)"/></svg>
+        
         <div>
-        <div class="eyebrow" id="hdrEyebrow">Nawa-e-Asatza · Ittehad-e-Asatza Punjab · PPLA Elections</div>
+        <div class="eyebrow" id="hdrEyebrow">PPLA Elections · Election monitoring</div>
         <h1 id="hdrTitle">PPLA Election Manager</h1>
-        <div class="urdu" lang="ur" dir="rtl">نوائے اساتذہ · اتحادِ اساتذہ پنجاب — انتخابی نشان: <b>مشعل</b></div>
-        <div class="btnrow" style="align-items:center;margin-top:4px"><button class="linkbtn" id="btnSettings" type="button">Set panel name &amp; polling day</button><button class="btn small primary" id="btnInstall" type="button" hidden>Install app</button></div>
+        <div class="urdu" lang="ur" dir="rtl">پی پی ایل اے انتخابات — مقابلے میں تین پینل</div>
+        <div class="parties" id="hdrParties"></div>
+        <div class="btnrow" style="align-items:center;margin-top:4px"><button class="linkbtn" id="btnSettings" type="button">Set desk name &amp; polling day</button><button class="btn small primary" id="btnInstall" type="button" hidden>Install app</button></div>
         </div>
       </div>
       <div class="stamp" id="stamp" hidden>
@@ -344,7 +346,7 @@ nav.tabs .ur{font-size:14px}
     <div class="filters"><input id="tSearch" type="search" placeholder="Search name, college, district or task"><select id="tDiv" aria-label="Division"></select></div>
     <div class="kpis" id="tKpis"></div>
     <div class="card"><div class="sechead"><h3>Coordinator gaps</h3><span class="note">Every division, district and college needs a named person</span></div><div class="datacard" id="tGaps"></div></div>
-    <div class="card"><div class="sechead"><h3>Our candidates &amp; seats</h3><button class="btn small" data-rgo-tab="setup" type="button">Edit posts &amp; candidates</button></div><div id="tCands"></div></div>
+    <div class="card"><div class="sechead"><h3>Candidates &amp; seats</h3><button class="btn small" data-rgo-tab="setup" type="button">Edit posts &amp; candidates</button></div><div id="tCands"></div></div>
     <div class="grid2" id="teamGroups"></div>
   </section>
 
@@ -419,7 +421,7 @@ nav.tabs .ur{font-size:14px}
 <script>
 (function(){
 const DIVISIONS=["Bahawalpur","Dera Ghazi Khan","Faisalabad","Gujranwala","Gujrat","Lahore","Multan","Rawalpindi","Sahiwal","Sargodha"];
-const SUPPORT=[["strong","Strong support","c-strong"],["lean","Leaning our way","c-lean"],["undec","Undecided","c-undec"],["opp","Opposed","c-opp"]];
+const SUPPORT=[["strong","Strong support","c-strong"],["lean","Leaning","c-lean"],["undec","Undecided","c-undec"],["opp","Opposed","c-opp"]];
 const SUPMAP=Object.fromEntries(SUPPORT.map(s=>[s[0],s]));
 const ACT_TYPES=["College visit","Staff-room meeting","Phone / WhatsApp drive","Corner meeting","Divisional convention","Central rally / convention","Press & social media","Manifesto distribution","Polling-day duty"];
 const ROLES=["Central committee","Campaign coordinator","Divisional coordinator","District coordinator","Unit coordinator","Unit representative","Focal person","Polling agent","Volunteer"];
@@ -429,11 +431,22 @@ const FOCUS=["Media & social media","Women colleges","Polling agents & polling d
 const UNIT_ROLES=["Unit coordinator","Unit representative"];
 const LEVELS={unit:"Unit",division:"Division",centre:"Centre"};
 // Release numbers: scripts/release.py keeps these, the ppla-build meta tag, version.json and sw.js in step.
-const APP_VERSION="1.13", APP_BUILD=23;
+const APP_VERSION="1.14", APP_BUILD=24;
 // Coalition this desk serves. The panel name in Settings overrides the display name.
-const COALITION="Nawa-e-Asatza & Ittehad-e-Asatza Punjab", SYMBOL="Torch (Mashal · مشعل)";
-const TORCH_SVG=`<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 3c7 9 13 14 13 23a13 13 0 0 1-26 0c0-7 4-10 7-15 1 4 3 6 5 7-1-6 0-10 1-15z" fill="var(--flame)"/><path d="M18 39h28l-3 6H21z" fill="var(--gold)"/><path d="M23 45h18l-6 17h-6z" fill="var(--handle)"/></svg>`;
-const panelName=()=>S.cfg.panel||COALITION;
+const TORCH_SVG=`<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 3c7 9 13 14 13 23a13 13 0 0 1-26 0c0-7 4-10 7-15 1 4 3 6 5 7-1-6 0-10 1-15z" fill="var(--flame)"/><path d="M32 17c3 5 7 8 7 13a7 7 0 0 1-14 0c0-4 2-6 3-9 1 2 2 3 4 4 0-3 0-5 0-8z" fill="var(--flame-core)"/><path d="M18 39h28l-3 6H21z" fill="var(--gold)"/><path d="M23 45h18l-6 17h-6z" fill="var(--handle)"/></svg>`, EAGLE_SVG=`<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 14c-3 0-5 2-5 5v4C20 21 10 16 3 8c2 12 9 21 20 25l-7 3h9l3 2v9l-5 9h18l-5-9v-9l3-2h9l-7-3c11-4 18-13 20-25-7 8-17 13-24 15v-4c0-3-2-5-5-5z" fill="var(--eagle)"/><path d="M29 18l-5 2 5 1z" fill="var(--gold)"/><circle cx="33" cy="18" r="1.4" fill="#fff"/></svg>`, LION_SVG=`<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 3l6 7 9-3 1 9 9 4-4 8 6 7-8 4 1 9-9-1-4 8-7-5-7 5-4-8-9 1 1-9-8-4 6-7-4-8 9-4 1-9 9 3z" fill="var(--lion)"/><circle cx="32" cy="34" r="15" fill="var(--lion-face)"/><circle cx="26.5" cy="31" r="2" fill="#2a1a0e"/><circle cx="37.5" cy="31" r="2" fill="#2a1a0e"/><path d="M28.5 37h7L32 41z" fill="#2a1a0e"/><path d="M27 44q5 3 10 0" stroke="#2a1a0e" stroke-width="1.6" fill="none"/></svg>`;
+// The three panels contesting the PPLA elections, shown alike. Symbol words are matched first, then panel names:
+// the Eagle panel's own posters call it "Ittehad-e-Asatza Punjab", which is also part of the Torch coalition's name.
+const PARTIES=[
+  {key:"torch",en:"Nawa-e-Asatza & Ittehad-e-Asatza Punjab",ur:"نوائے اساتذہ · اتحاد اساتذہ پنجاب",sym:"Torch",symUr:"مشعل",svg:TORCH_SVG,
+    syms:["torch","mashal","mashaal","مشعل"],names:["nawa e asatza","nawa asatza","nawae asatza","ittehad e asatza punjab","ittihad e asatza punjab","etehad e asatza punjab","ethad e asatza punjab","ethad a asatza punjab","نوائے اساتذہ","اتحاد اساتذہ پنجاب","اتحادِ اساتذہ پنجاب"]},
+  {key:"eagle",en:"Ittehad-e-Asatza Pakistan",ur:"اتحاد اساتذہ پاکستان",sym:"Eagle",symUr:"شاہین",svg:EAGLE_SVG,
+    syms:["eagle","shaheen","شاہین","عقاب"],names:["ittehad e asatza pakistan","ittihad e asatza pakistan","اتحاد اساتذہ پاکستان","اتحادِ اساتذہ پاکستان"]},
+  {key:"lion",en:"Tehreek-e-Asatza Punjab",ur:"تحریک اساتذہ پنجاب",sym:"Lion",symUr:"شیر",svg:LION_SVG,
+    syms:["lion","شیر"],names:["tehreek e asatza","tehreek asatza","tehreak e asatza","tehreak a asatza","tahreek e asatza","تحریک اساتذہ"]}];
+const partyOf=k=>{const raw=String(k&&(k.panel||k.name)||"");if(!raw)return null;const p=norm(raw),has=m=>raw.includes(m)||p.includes(m);
+  return PARTIES.find(x=>x.syms.some(has))||PARTIES.find(x=>x.names.some(has))||null};
+const symTag=(p,label=true)=>p?`<span class="symtag p-${p.key}" title="${esc(p.sym)} · ${esc(p.en)}">${p.svg}${label?esc(p.sym):""}</span>`:"";
+const panelName=()=>S.cfg.panel||"PPLA Election Manager";
 
 /* ---------- Punjab colleges directory (861 public colleges, CIS Punjab; rebuilt by scripts/build_seed.py) ---------- */
 /*SEED-START*/
@@ -556,7 +569,7 @@ function briefText(div){
   if(pr.length){L.push("","*Priority targets*");pr.forEach((x,i)=>L.push(`${i+1}. ${x.u.name}${n(x.u.members)?` — ${n(x.u.members)} voters`:""}, ${(SUPMAP[x.u.support]||["","not assessed"])[1].toLowerCase()}, ${x.l?"last contact "+fmtDate(x.l):"never contacted"}`))}
   if(!div){const lag=DIVISIONS.map(d=>({d,g:agg(S.units.filter(u=>u.division===d))})).filter(x=>x.g.units).sort((x,y)=>pct(x.g.contacted,x.g.voters)-pct(y.g.contacted,y.g.voters)||y.g.units-x.g.units).slice(0,3);
     if(lag.length){L.push("","*Divisions needing a push*");lag.forEach(x=>L.push(`• ${x.d}: ${pct(x.g.contacted,x.g.voters)}% contacted, ${x.g.units} units`))}}
-  L.push("",`🔥 Vote for the Torch (مشعل) · ${COALITION}`);
+  L.push("","PPLA Election Manager · unofficial monitoring brief");
   return L.join("\n");
 }
 function emptyBox(title,body,btn){return `<div class="empty"><b>${esc(title)}</b><span>${esc(body)}</span>${btn&&!S.readOnly?`<button class="btn small primary" data-add="${btn[0]}" type="button">${esc(btn[1])}</button>`:""}</div>`}
@@ -572,7 +585,7 @@ function renderPunjab(){
     ["Unit coordinators in place",pct(reps,a.units)+"%",reps+" of "+a.units+" units"],
     ["Voters (faculty)",a.voters.toLocaleString(),a.voters?S.units.filter(u=>n(u.members)).length+" units with strength entered":"enter faculty strength per unit"],
     ["Contacted",pct(a.contacted,a.voters)+"%",a.contacted.toLocaleString()+" teachers"],
-    ["Favourable",pct(fav,a.voters)+"%",!a.voters?"strong + leaning":fav>=maj?"majority reached on paper":(maj-fav).toLocaleString()+" short of a majority"],
+    ["Favourable",pct(fav,a.voters)+"%",!a.voters?"strong + leaning"+trackNote():fav>=maj?"majority reached on paper":(maj-fav).toLocaleString()+" short of a majority"],
     ["Outreach done",done.length,reached?reached.toLocaleString()+" people reached":"log the first one"],
   ]);
   supBar($("pBar"),a);
@@ -697,14 +710,15 @@ function renderTeam(){
   $("tGaps").innerHTML=!gapDiv.length&&!gapDist.length?`<div class="okline">Every ${tdv?"post in "+esc(tdv):"division and district"} has a coordinator.</div>`:
     (gapDiv.length?`<div class="note"><b>Divisions without a coordinator</b> (tap to assign)</div><div class="btnrow">${gapDiv.map(d=>assignBtn(d,{role:"Divisional coordinator",level:"division",division:d})).join("")}</div>`:"")+
     (gapDist.length?`<div class="note"><b>Districts without a coordinator</b> (tap to assign)</div><div class="btnrow">${gapDist.map(x=>assignBtn(x.ds+(tdv?"":" · "+x.d),{role:"District coordinator",level:"district",division:x.d,district:x.ds})).join("")}</div>`:"");
-  // our candidates, from Results > Posts & candidates
-  const ours=S.contests.map(c=>({c,k:(c.candidates||[]).filter(isOurs)})).sort((a,b)=>cmpContest(a.c,b.c))
-    .filter(x=>!tdv||x.c.scope==="centre"||x.c.division===tdv||(x.c.scope==="unit"&&(S.units.find(u=>u.id===x.c.unitId)||{}).division===tdv));
-  $("tCands").innerHTML=!S.contests.length?`<div class="empty"><b>No posts set up yet</b><span>Add each post with its seats and candidates. Write our candidates' panel as "Nawa-e-Asatza", "Ittehad-e-Asatza" or "Torch" so they are picked out.</span><button class="btn small primary" data-rgo-tab="setup" type="button">Set up posts &amp; candidates</button></div>`:
-    `<div class="tscroll"><table><thead><tr><th>Post</th><th>Who votes</th><th class="r">Seats</th><th>Our candidate(s)</th><th class="r">In the field</th></tr></thead><tbody>`+
-    ours.map(x=>{const seats=n(x.c.seats)||1,open=seats-x.k.length;return `<tr class="click" data-edit-contest="${esc(x.c.id)}" tabindex="0"><td><b>${esc(x.c.name)}</b></td><td>${esc(scopeLabel(x.c))}</td><td class="r">${seats}</td>
-      <td>${x.k.length?x.k.map(k=>`<span class="symtag">${TORCH_SVG}</span> ${esc(k.name)}`).join("<br>"):'<span class="stale">No Torch candidate</span>'}${x.k.length&&open>0?` <span class="note">(${open} seat${open===1?"":"s"} without our candidate)</span>`:""}</td>
-      <td class="r">${(x.c.candidates||[]).length}</td></tr>`}).join("")+`</tbody></table></div>`;
+  // every panel's candidates, from Results > Posts & candidates
+  const posts=S.contests.slice().sort(cmpContest)
+    .filter(c=>!tdv||c.scope==="centre"||c.division===tdv||(c.scope==="unit"&&(S.units.find(u=>u.id===c.unitId)||{}).division===tdv));
+  const pcell=(c,p)=>{const ks=(c.candidates||[]).filter(k=>partyOf(k)===p);
+    return ks.length?ks.map(k=>k.name===k.panel?'<span class="note">panel only</span>':esc(k.name)).join("<br>"):'<span class="stale">–</span>'};
+  $("tCands").innerHTML=!S.contests.length?`<div class="empty"><b>No posts set up yet</b><span>Add each post with its seats and candidates. Write each candidate's panel or symbol (Torch, Eagle or Lion) so the right symbol is shown.</span><button class="btn small primary" data-rgo-tab="setup" type="button">Set up posts &amp; candidates</button></div>`:
+    `<div class="tscroll"><table><thead><tr><th>Post</th><th>Who votes</th><th class="r">Seats</th>${PARTIES.map(p=>`<th>${symTag(p)}</th>`).join("")}<th class="r">In the field</th></tr></thead><tbody>`+
+    posts.map(c=>`<tr class="click" data-edit-contest="${esc(c.id)}" tabindex="0"><td><b>${esc(c.name)}</b></td><td>${esc(scopeLabel(c))}</td><td class="r">${n(c.seats)||1}</td>
+      ${PARTIES.map(p=>`<td>${pcell(c,p)}</td>`).join("")}<td class="r">${(c.candidates||[]).length}</td></tr>`).join("")+`</tbody></table></div>`;
   if(!S.team.length){$("teamGroups").innerHTML=`<div style="grid-column:1/-1">${emptyBox("No team members yet","Add the central committee, a coordinator for each division and district, a coordinator for every college, and focal persons for media, polling day and other tasks.",["member","Add member"])}</div>`;return}
   const match=m=>(!tdv||m.division===tdv||m.level==="centre")&&(!q||[m.name,m.role,m.focus,m.unit,m.district,m.division,m.phone,(S.units.find(u=>u.id===m.unitId)||{}).name].join(" ").toLowerCase().includes(q));
   const notFocal=m=>m.role!=="Focal person";
@@ -715,7 +729,9 @@ function renderTeam(){
 
 function renderHeader(){
   const c=S.cfg;
-  $("hdrTitle").textContent=c.panel?c.panel:"PPLA Election Manager";
+  $("hdrTitle").textContent="PPLA Election Manager";
+  $("hdrEyebrow").textContent=(c.panel?c.panel+" · ":"")+"PPLA Elections · Election monitoring";
+  $("hdrParties").innerHTML=PARTIES.map(p=>`<span class="party">${p.svg}<span><b>${esc(p.sym)} · <span lang="ur">${esc(p.symUr)}</span></b>${esc(p.en)}</span></span>`).join("");
   if(c.pollDate){const d=dayDiff(c.pollDate,todayStr());$("stamp").hidden=false;$("daysLeft").textContent=d>=0?d:"0";$("pollDate").textContent=fmtDate(c.pollDate)}else $("stamp").hidden=true;
   $("btnSettings").hidden=S.readOnly&&!!c.panel;
 }
@@ -853,8 +869,9 @@ function memberForm(m){
 
 function settingsForm(){
   const c=S.cfg;
-  openSheet(`<h2 id="sheetTitle">Campaign settings</h2><form class="f">
-    <label class="full">Panel / coalition name<input name="panel" value="${esc(c.panel)}" placeholder="${esc(COALITION)}"></label>
+  openSheet(`<h2 id="sheetTitle">Settings</h2><form class="f">
+    <label class="full">Desk or team name (shown on shared messages)<input name="panel" value="${esc(c.panel)}" placeholder="PPLA Election Manager"></label>
+    <label class="full">Support levels are for<select name="trackParty"><option value="">Not set</option>${PARTIES.map(p=>`<option value="${p.key}"${c.trackParty===p.key?" selected":""}>${esc(p.sym)} · ${esc(p.en)}</option>`).join("")}</select></label>
     <label>Polling day<input name="pollDate" type="date" value="${esc(c.pollDate)}"></label>
     <label>Election body<input name="body" value="${esc(c.body||"Punjab Professors & Lecturers Association")}"></label>
     <div class="full ballothead"><b>Main Election Office</b> · every polling agent sends results here. Set it once on the central desk, then send the backup to all phones.</div>
@@ -864,7 +881,7 @@ function settingsForm(){
     ${foot(false)}</form>`,
   async d=>{
     for(const k of["officeWa","officeWa2"])if(d[k].trim()&&!waNumber(d[k])){toast("Check the office number: use a mobile number like 0300-1234567");return}
-    S.cfg=Object.assign({},S.cfg,{panel:d.panel.trim(),pollDate:d.pollDate,body:d.body.trim(),officeName:d.officeName.trim()||DEFAULT_OFFICE,officeWa:d.officeWa.trim(),officeWa2:d.officeWa2.trim(),updatedAt:new Date().toISOString()});persist();render();toast("Settings saved");closeSheet()});
+    S.cfg=Object.assign({},S.cfg,{panel:d.panel.trim(),trackParty:d.trackParty||"",pollDate:d.pollDate,body:d.body.trim(),officeName:d.officeName.trim()||DEFAULT_OFFICE,officeWa:d.officeWa.trim(),officeWa2:d.officeWa2.trim(),updatedAt:new Date().toISOString()});persist();render();toast("Settings saved");closeSheet()});
 }
 $("btnSettings").addEventListener("click",settingsForm);
 
@@ -1157,14 +1174,6 @@ const applies=(c,u)=>c.scope==="centre"||(c.scope==="division"&&u.division===c.d
 let resIdx=null,resIdxVer=-1,resIdxArr=null;
 const resFor=uid=>{if(resIdxVer!==dataVer||resIdxArr!==S.results){resIdx=new Map(S.results.map(r=>[r.unitId,r]));resIdxVer=dataVer;resIdxArr=S.results}return resIdx.get(uid)};
 const scopeLabel=c=>c.scope==="centre"?"Provincial (Punjab-wide)":c.scope==="division"?(c.division||"?")+" Division":((S.units.find(u=>u.id===c.unitId)||{}).name||"Unit");
-// Our candidate: panel matches the Settings panel name, or names the coalition or its Torch symbol.
-// Narrow on purpose: "Asatza" alone also names rival panels (Ittehad-e-Asatza Pakistan · Eagle, Tehreek-e-Asatza Punjab · Lion).
-const OUR_MARKS=["nawa e asatza","nawa asatza","nawae asatza","ittehad e asatza punjab","ittihad e asatza punjab","etehad e asatza punjab","ethad e asatza punjab","ethad a asatza punjab","torch","mashal","mashaal"];
-const OUR_MARKS_UR=["مشعل","نوائے اساتذہ","اتحاد اساتذہ پنجاب","اتحادِ اساتذہ پنجاب"];
-const isOurs=k=>{if(!k||!k.panel)return false;const raw=String(k.panel),p=norm(raw);
-  if(OUR_MARKS_UR.some(m=>raw.includes(m)))return true;
-  if(OUR_MARKS.some(m=>p.includes(m)))return true;
-  return !!(S.cfg.panel&&p&&(norm(S.cfg.panel).includes(p)||p.includes(norm(S.cfg.panel))))};
 const hasVotes=(r,c)=>r&&r.votes&&r.votes[c.id]&&Object.values(r.votes[c.id]).some(v=>v!==""&&v!=null);
 
 function tally(c){
@@ -1199,7 +1208,7 @@ $("rViews").addEventListener("click",e=>{const b=e.target.closest("[data-rview]"
 const PANEL_LEVEL={centre:"Provincial",division:"Divisional"};
 function renderPanels(){
   const box=$("rPanels");
-  const list=typeof CONTEST_PANELS!=="undefined"?CONTEST_PANELS:[];
+  const list=(typeof CONTEST_PANELS!=="undefined"?CONTEST_PANELS:[]).concat(templatePanels());
   if(!list.length){box.innerHTML=`<div class="empty"><b>No contesting panels yet</b></div>`;return}
   const divs=[...new Set(list.map(p=>p.division).filter(Boolean))].sort((a,b)=>DIVISIONS.indexOf(a)-DIVISIONS.indexOf(b));
   const f=S.panelFilter||"all", q=(S.panelQ||"").trim().toLowerCase();
@@ -1215,13 +1224,13 @@ function renderPanels(){
   const shown=list.filter(p=>f==="all"||(f==="centre"?p.level==="centre":p.division===f))
     .map(p=>Object.assign({},p,{cands:p.candidates.filter(hit)})).filter(p=>p.cands.length);
   const group=p=>`<div class="pgroup card">
-      <div class="pghead"><b>${esc(p.panel)}</b><span class="ur" lang="ur" dir="rtl">${esc(p.panelUr)}</span>
+      <div class="pghead">${symTag(partyOf({panel:p.symbol+" "+p.panel}),false)}<b>${esc(p.panel)}</b><span class="ur" lang="ur" dir="rtl">${esc(p.panelUr)}</span>
         <span class="ptag">${esc(p.symbol)} · <span lang="ur">${esc(p.symbolUr)}</span></span><span class="ptag">${esc(PANEL_LEVEL[p.level])}${p.division?" · "+esc(p.division):""}</span></div>
       <div class="cgrid">${p.cands.map(cand).join("")}</div></div>`;
   const sections=[["Provincial panels",shown.filter(p=>p.level==="centre")],...divs.map(d=>[d+" Division",shown.filter(p=>p.division===d)])].filter(g=>g[1].length);
   const total=list.reduce((n,p)=>n+p.candidates.length,0);
   box.innerHTML=`<div class="sechead"><h2>Contesting panels</h2></div>
-    <p class="note">Rival panels' candidates as printed on their own posters (${total} so far), so agents and coordinators can recognise them. Our own panel is ${esc(COALITION)} (Torch).</p>
+    <p class="note">Candidates of all three contesting panels (${total} so far), so agents and monitors can recognise them. Photos and names are as printed on each panel's own posters; candidates without a poster here are listed from the ballot paper.</p>
     <input id="pSearch" type="search" placeholder="Search name, post or college" value="${esc(S.panelQ||"")}" aria-label="Search candidates">
     <div class="chips">${chip("all","All")}${chip("centre","Provincial")}${divs.map(d=>chip(d,d)).join("")}</div>
     ${sections.length?sections.map(([t,ps])=>`<h3>${esc(t)}</h3>${ps.map(group).join("")}`).join(""):`<div class="empty"><b>No candidate matches</b></div>`}`;
@@ -1237,15 +1246,15 @@ function ballotsFor(cs){
   for(const c of cs.slice().sort(cmpContest)){
     const b=by[c.scope]=by[c.scope]||{scope:c.scope,title:BALLOT_NAME[c.scope]+(c.scope==="division"&&c.division?" · "+c.division:""),posts:0,panels:[],seen:new Set()};
     b.posts++;
-    for(const k of c.candidates||[]){const key=panelKey(k);if(!b.seen.has(key)){b.seen.add(key);b.panels.push({key,label:k.panel||k.name,ours:isOurs(k)})}}
+    for(const k of c.candidates||[]){const key=panelKey(k);if(!b.seen.has(key)){b.seen.add(key);b.panels.push({key,label:k.panel||k.name,party:partyOf(k)})}}
   }
   return Object.values(by);
 }
 // Entry fields for one ballot: one count per panel, or each candidate's votes post by post.
 function ballotFields(b,cs,r){
-  if(panelMode(b.scope))return `<fieldset class="full"><legend>${esc(b.title)}</legend><div class="full note">${b.posts} post${b.posts===1?"":"s"} on this ballot. One stamp counts for a whole panel: enter the votes for each panel.</div>${b.panels.map(pn=>`<label>${esc(pn.label)}${pn.ours?` <span class="symtag">${TORCH_SVG}</span>`:""}<input type="number" min="0" inputmode="numeric" data-ps="${esc(b.scope)}" data-pk="${esc(pn.key)}" value="${esc(panelValue(r,b,pn.key))}"></label>`).join("")}</fieldset>`;
+  if(panelMode(b.scope))return `<fieldset class="full"><legend>${esc(b.title)}</legend><div class="full note">${b.posts} post${b.posts===1?"":"s"} on this ballot. One stamp counts for a whole panel: enter the votes for each panel.</div>${b.panels.map(pn=>`<label>${esc(pn.label)}${pn.party?" "+symTag(pn.party,false):""}<input type="number" min="0" inputmode="numeric" data-ps="${esc(b.scope)}" data-pk="${esc(pn.key)}" value="${esc(panelValue(r,b,pn.key))}"></label>`).join("")}</fieldset>`;
   return `<div class="full ballothead"><b>${esc(b.title)}</b> · ${b.posts} post${b.posts===1?"":"s"} · enter each candidate's votes</div>`+
-    cs.filter(c=>c.scope===b.scope).sort(cmpContest).map(c=>`<fieldset class="full"><legend>${esc(c.name)}${c.seats>1?` · ${c.seats} seats`:""}</legend>${(c.candidates||[]).map(k=>`<label>${esc(k.name)}${k.panel&&k.panel!==k.name?` · ${esc(k.panel)}`:""}${isOurs(k)?` <span class="symtag">${TORCH_SVG}</span>`:""}<input type="number" min="0" inputmode="numeric" data-c="${esc(c.id)}" data-k="${esc(k.id)}" value="${esc(r&&r.votes&&r.votes[c.id]?r.votes[c.id][k.id]??"":"")}"></label>`).join("")}</fieldset>`).join("");
+    cs.filter(c=>c.scope===b.scope).sort(cmpContest).map(c=>`<fieldset class="full"><legend>${esc(c.name)}${c.seats>1?` · ${c.seats} seats`:""}</legend>${(c.candidates||[]).map(k=>`<label>${esc(k.name)}${k.panel&&k.panel!==k.name?` · ${esc(k.panel)}`:""}${partyOf(k)?" "+symTag(partyOf(k),false):""}<input type="number" min="0" inputmode="numeric" data-c="${esc(c.id)}" data-k="${esc(k.id)}" value="${esc(r&&r.votes&&r.votes[c.id]?r.votes[c.id][k.id]??"":"")}"></label>`).join("")}</fieldset>`).join("");
 }
 // Saved panel count, or one rebuilt from per-post votes (results entered before panel mode).
 function panelValue(r,b,key){
@@ -1272,14 +1281,13 @@ function panelStandings(){
     const rows=b.panels.map(pn=>Object.assign({},pn,{v:tot[pn.key]})).sort((x,y)=>y.v-x.v), sum=rows.reduce((s,x)=>s+x.v,0);
     const margin=rows.length>1?rows[0].v-rows[1].v:null, allIn=reported===units.length, safe=margin!=null&&!unknown&&margin>remaining;
     html+=`<div class="card"><div class="sechead"><h3>${esc(g.title)}</h3><span class="note">Panel standings · ${reported}/${units.length} units</span></div>
-      <div class="tally">${rows.map((k,i)=>`<div class="trow${i===0&&sum?" lead":""}${k.ours?" ours":""}"><span class="rk">${i+1}</span><span class="who"><b>${esc(k.label)}</b>${k.ours?` <span class="symtag">${TORCH_SVG}Torch</span>`:""}</span><span class="vv">${k.v.toLocaleString()}<small>${sum?Math.round(k.v*1000/sum)/10:0}%</small></span><span class="bar"><span style="width:${rows[0].v?(k.v*100/rows[0].v).toFixed(1):0}%"></span></span></div>`).join("")}</div>
+      <div class="tally">${rows.map((k,i)=>`<div class="trow${i===0&&sum?" lead":""}"><span class="rk">${i+1}</span><span class="who"><b>${esc(k.label)}</b>${k.party?" "+symTag(k.party):""}</span><span class="vv">${k.v.toLocaleString()}<small>${sum?Math.round(k.v*1000/sum)/10:0}%</small></span><span class="bar"><span style="width:${rows[0].v?(k.v*100/rows[0].v).toFixed(1):0}%"></span></span></div>`).join("")}</div>
       <div class="tstat${safe||allIn?" safe":""}">${margin==null?"Only one panel on this ballot.":allIn?`All units in. Unofficial lead: ${margin} votes.`:safe?`Unassailable lead (unofficial) of ${margin}: more than the ${remaining.toLocaleString()} voters still to report.`:unknown?`Lead ${margin}. Faculty strength not entered for ${unknown} unreported units, so no safe call yet.`:`Lead ${margin}. About ${remaining.toLocaleString()} voters still to report.`}</div></div>`;
   }
   return html?`<h2 style="margin:8px 0 0;font-size:22px">Panel standings</h2>`+html:"";
 }
 
-/* ---- ballot paper templates: the seats on each ballot, our Torch candidates, rival panels by symbol only ---- */
-// Rival panels are listed under panel name and symbol only (user's rule: never store opponents' personal names).
+/* ---- ballot paper templates: the seats on each ballot and the Torch candidates; Eagle and Lion candidates come from their posters ---- */
 const OUR_PANEL="نوائے اساتذہ پنجاب · Torch", RIVAL_PANELS=["اتحاد اساتذہ پاکستان · Eagle","تحریک اساتذہ پنجاب · Lion"];
 // Provincial ballot (voted Punjab-wide), from the coalition's Rawalpindi Division poster.
 const PROVINCIAL_TEMPLATE={posts:[
@@ -1300,13 +1308,30 @@ const BALLOT_TEMPLATES=[
   ["District President Murree","صدر ضلع مری","شرجیلہ فائق"],["District President Talagang","صدر ضلع تلہ گنگ","عمران رضا منہاس"],
   ["Additional General Secretary (Women)","ایڈیشنل جنرل سیکرٹری خاتون","ضوفشاں کرن"],["Joint Secretary I","جوائنٹ سیکرٹری I","حافظ ثناءاللہ"],["Joint Secretary II","جوائنٹ سیکرٹری II","راجہ محمد اکرام"],["Joint Secretary (Women)","جوائنٹ سیکرٹری خاتون","شاہدہ پروین"],
   ["Secretary Publications","سیکرٹری نشر و اشاعت","وقاص رفیع"],["Finance Secretary","فنانس سیکرٹری","حافظ احمد علی"]]}];
+// Post names compared loosely: "Joint Secretary (I)" = "Joint Secretary 1", "President Punjab" = "President".
+const normPost=s=>String(s||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim().split(" ")
+  .filter(w=>w!=="punjab"&&w!=="division").map(w=>w==="1"?"i":w==="2"?"ii":w).join(" ");
+// A rival candidate's name from that panel's poster, only when exactly one candidate holds the post.
+function posterName(panel,scope,div,post){
+  const party=partyOf({panel});if(!party||typeof CONTEST_PANELS==="undefined")return "";
+  const hits=CONTEST_PANELS.filter(p=>p.level===scope&&(scope!=="division"||p.division===div)&&partyOf({panel:p.symbol+" "+p.panel})===party)
+    .flatMap(p=>p.candidates).filter(c=>normPost(c.post)===normPost(post)&&!/واضح نہیں/.test(c.name));
+  return hits.length===1?hits[0].name:"";
+}
+// Torch candidates from the ballot templates, shown beside the poster panels (no photos yet).
+function templatePanels(){
+  const mk=(t,level,division)=>({id:"t-"+(division||"centre"),panel:PARTIES[0].en,panelUr:PARTIES[0].ur,symbol:"Torch",symbolUr:"مشعل",level,division,
+    candidates:t.posts.map(([post,postUr,name])=>({post,postUr,name,nameEn:"",college:""}))});
+  return [mk(PROVINCIAL_TEMPLATE,"centre",""),...BALLOT_TEMPLATES.map(t=>mk(t,"division",t.division))];
+}
+const trackNote=()=>{const p=PARTIES.find(x=>x.key===S.cfg.trackParty);return p?" · for "+p.sym:""};
 // Adds a template's posts at one scope; a post already set up there (same name) is left as it is.
 function addTemplatePosts(t,scope,div){
   const now=new Date().toISOString();let added=0;
   t.posts.forEach(([en,ur,ours],i)=>{const name=en+" · "+ur;
     if(S.contests.some(c=>c.scope===scope&&(scope!=="division"||c.division===div)&&(norm(c.name)===norm(name)||norm(c.name)===norm(en))))return;
     S.contests.push({id:uid(),name,scope,division:scope==="division"?div:"",unitId:"",seats:1,order:i,
-      candidates:[...t.rivals.map(panel=>({id:uid(),name:panel,panel})),{id:uid(),name:ours,panel:OUR_PANEL}],updatedAt:now});added++});
+      candidates:[{id:uid(),name:ours,panel:OUR_PANEL},...t.rivals.map(panel=>({id:uid(),name:posterName(panel,scope,div,en)||panel,panel}))],updatedAt:now});added++});
   return added;
 }
 // A division's ballot, plus the Provincial posts if this device doesn't have them yet.
@@ -1337,7 +1362,7 @@ function contestForm(c){
     <label>Seats to fill<input name="seats" type="number" min="1" inputmode="numeric" value="${esc(c.seats||1)}"></label>
     <label id="cDivWrap">Division<select name="division"><option value="">Choose…</option>${opt(DIVISIONS,c.division)}</select></label>
     <label id="cUnitWrap">College unit<select name="unitId">${unitOpts}</select></label>
-    <label class="full">Candidates, one per line as Name | Panel<textarea name="cands" rows="5" placeholder="Prof. Ahmad Khan | Nawa-e-Asatza (Torch)&#10;Dr. Sara Malik | Rival panel">${esc((c.candidates||[]).map(k=>k.name+(k.panel?" | "+k.panel:"")).join("\n"))}</textarea></label>
+    <label class="full">Candidates, one per line as Name | Panel<textarea name="cands" rows="5" placeholder="Prof. Ahmad Khan | Nawa-e-Asatza (Torch)&#10;Dr. Sara Malik | Tehreek-e-Asatza (Lion)">${esc((c.candidates||[]).map(k=>k.name+(k.panel?" | "+k.panel:"")).join("\n"))}</textarea></label>
     ${foot(!!c.id)}</form>`,
   async d=>{
     if(d.scope==="division"&&!d.division){toast("Choose the division for this post");return}
@@ -1522,7 +1547,7 @@ function renderTally(){
       t.unknown?`Margin ${t.margin}. ${t.elig.length-t.reported} unit${t.elig.length-t.reported===1?"":"s"} still to report; faculty strength not entered for ${t.unknown} of them, so the lead can't be called safe yet.`:
       `Margin ${t.margin}. About ${t.remaining.toLocaleString()} voters in ${t.elig.length-t.reported} unit${t.elig.length-t.reported===1?"":"s"} still to report.`;
     html+=`<div class="card"><div class="sechead"><h3>${esc(c.name)}${t.seats>1?` <span class="note">· ${t.seats} seats</span>`:""}</h3><span class="note">${esc(scopeLabel(c))} · ${t.reported}/${t.elig.length} units</span></div>
-      <div class="tally">${t.rows.map((k,i)=>`<div class="trow${i<t.seats&&t.sum?" lead":""}${isOurs(k)?" ours":""}"><span class="rk">${i+1}</span><span class="who"><b>${esc(k.name)}</b>${k.panel&&k.panel!==k.name?`<small>${esc(k.panel)}</small>`:""}${isOurs(k)?` <span class="symtag">${TORCH_SVG}Torch</span>`:""}</span><span class="vv">${k.v.toLocaleString()}<small>${t.sum?Math.round(k.v*1000/t.sum)/10:0}%</small></span><span class="bar"><span style="width:${t.rows[0].v?(k.v*100/t.rows[0].v).toFixed(1):0}%"></span></span></div>`).join("")}</div>
+      <div class="tally">${t.rows.map((k,i)=>`<div class="trow${i<t.seats&&t.sum?" lead":""}"><span class="rk">${i+1}</span><span class="who"><b>${esc(k.name)}</b>${k.panel&&k.panel!==k.name?`<small>${esc(k.panel)}</small>`:""}${partyOf(k)?" "+symTag(partyOf(k)):""}</span><span class="vv">${k.v.toLocaleString()}<small>${t.sum?Math.round(k.v*1000/t.sum)/10:0}%</small></span><span class="bar"><span style="width:${t.rows[0].v?(k.v*100/t.rows[0].v).toFixed(1):0}%"></span></span></div>`).join("")}</div>
       <div class="tstat${t.safe||t.allIn?" safe":""}">${t.reported&&t.contested&&!t.allIn&&!t.safe?"Leading · ":""}${t.safe&&!t.allIn?"Unassailable lead (unofficial) · ":""}${esc(status)}</div></div>`;
   }
   $("rTally").innerHTML=html;
@@ -1582,7 +1607,7 @@ fillDistricts();
 setTab(S.tab);
 loadPhotoKeys();
 // Urdu beside the English headings, card titles and figure labels, wherever they are drawn
-const UR={"Support across Punjab":"پنجاب بھر میں حمایت","Division scoreboard":"ڈویژن اسکور بورڈ","Priority targets":"ترجیحی اہداف","Next 14 days":"اگلے 14 دن","Units needing a visit":"دورہ طلب یونٹس","District scoreboard":"ضلعی اسکور بورڈ","Divisional team":"ڈویژنل ٹیم","Outreach in this division":"اس ڈویژن میں رابطہ مہم","Units":"یونٹس","College units":"کالج یونٹس","Outreach log":"رابطہ مہم کا ریکارڈ","Coming up":"آئندہ","Completed & past":"مکمل اور گزشتہ","Campaign team":"انتخابی ٹیم","Coordinator gaps":"خالی کوآرڈینیٹر عہدے","Our candidates & seats":"ہمارے امیدوار اور نشستیں","Data & sharing":"ڈیٹا اور شیئرنگ","Save a backup":"بیک اپ محفوظ کریں","Load a backup":"بیک اپ لوڈ کریں","App version & updates":"ایپ ورژن اور اپڈیٹس","Punjab colleges directory":"پنجاب کالجز ڈائریکٹری","Update units from a spreadsheet":"اسپریڈشیٹ سے یونٹس اپڈیٹ کریں","Install on your phone":"فون پر انسٹال کریں","Clear this device":"اس ڈیوائس کا ڈیٹا صاف کریں","Panel standings":"پینل پوزیشن","Posts on the ballot":"بیلٹ پر عہدے","How voters mark each ballot":"ووٹر بیلٹ پر نشان کیسے لگاتے ہیں","Paste result messages":"نتائج کے پیغامات چسپاں کریں","Provincial posts":"صوبائی عہدے","Divisional posts":"ڈویژنل عہدے","Unit level posts":"یونٹ سطح کے عہدے","Centre — Punjab":"مرکز — پنجاب","Division — Directorates":"ڈویژن — ڈائریکٹوریٹس","District":"ضلع","Unit — Colleges":"یونٹ — کالجز","Focal persons":"فوکل پرسنز","Campaign settings":"انتخابی ترتیبات","Add college unit":"کالج یونٹ شامل کریں","Edit unit":"یونٹ میں ترمیم","Plan outreach":"رابطہ مہم کی منصوبہ بندی","Edit outreach":"رابطہ مہم میں ترمیم","Add team member":"ٹیم رکن شامل کریں","Edit team member":"ٹیم رکن میں ترمیم","Add post":"عہدہ شامل کریں","Edit post":"عہدے میں ترمیم","Result sheet photo":"نتیجہ شیٹ کی تصویر","Units registered":"رجسٹرڈ یونٹس","Unit coordinators in place":"مقرر یونٹ کوآرڈینیٹرز","Voters (faculty)":"ووٹرز (اساتذہ)","Contacted":"رابطہ ہوا","Favourable":"حامی","Outreach done":"مکمل رابطہ مہم","Voters":"ووٹرز","Outreach":"رابطہ مہم","Divisional coordinators":"ڈویژنل کوآرڈینیٹرز","District coordinators":"ضلعی کوآرڈینیٹرز","Unit coordinators":"یونٹ کوآرڈینیٹرز","Units reported":"رپورٹ شدہ یونٹس","Votes cast":"ڈالے گئے ووٹ","Turnout":"ٹرن آؤٹ","Add member":"رکن شامل کریں","Add the first post":"پہلا عہدہ شامل کریں","Add unit":"یونٹ شامل کریں","Cancel":"منسوخ","Check for updates":"اپڈیٹ چیک کریں","Choose from gallery":"گیلری سے منتخب کریں","Clear all data":"تمام ڈیٹا صاف کریں","Close":"بند کریں","Copy":"کاپی","Delete":"حذف کریں","Delete result":"نتیجہ حذف کریں","Edit":"ترمیم","Edit posts & candidates":"عہدوں اور امیدواروں میں ترمیم","Enter unit result":"یونٹ کا نتیجہ درج کریں","Export CSV":"CSV ایکسپورٹ کریں","Import a .csv file":"CSV فائل امپورٹ کریں","Import results":"نتائج امپورٹ کریں","Install app":"ایپ انسٹال کریں","Load missing colleges":"باقی کالجز لوڈ کریں","Mark done":"مکمل","Merge a file":"فائل شامل کریں","Plan visit":"دورہ طے کریں","Posts & candidates":"عہدے اور امیدوار","Contesting panels":"مدمقابل پینل","Provincial panels":"صوبائی پینل","Replace with a file":"فائل سے تبدیل کریں","Restart now":"ابھی دوبارہ کھولیں","Save":"محفوظ کریں","Save backup (.json)":"بیک اپ محفوظ کریں","Save result":"نتیجہ محفوظ کریں","Send backup on WhatsApp…":"واٹس ایپ پر بیک اپ بھیجیں","Send photo only":"صرف تصویر بھیجیں","Set panel name & polling day":"پینل کا نام اور پولنگ کا دن","Set up posts":"عہدے ترتیب دیں","Set up posts & candidates":"عہدے اور امیدوار ترتیب دیں","Share awaited list":"باقی یونٹس کی فہرست بھیجیں","Share division brief":"ڈویژن کی رپورٹ بھیجیں","Share message elsewhere…":"پیغام کہیں اور بھیجیں","Share summary as message":"خلاصہ بطور پیغام بھیجیں","Share to WhatsApp…":"واٹس ایپ پر بھیجیں","Share today's brief":"آج کی رپورٹ بھیجیں","Tally":"گنتی","Today":"آج","Units list (.csv)":"یونٹس کی فہرست","Use backup office number":"دفتر کا متبادل نمبر","View":"دیکھیں","WhatsApp":"واٹس ایپ","Take photo of result sheet":"نتیجہ شیٹ کی تصویر لیں","Retake photo":"دوبارہ تصویر لیں","1 · Send result message":"نتیجے کا پیغام بھیجیں","2 · Send result file + photo":"نتیجہ فائل اور تصویر بھیجیں","Tap again to delete":"حذف کرنے کے لیے دوبارہ دبائیں","Tap again to clear everything":"سب صاف کرنے کے لیے دوبارہ دبائیں","Strong support":"بھرپور حمایت","Leaning our way":"ہماری طرف مائل","Undecided":"غیر فیصلہ کن","Opposed":"مخالف","Not assessed":"جائزہ باقی","Support level":"حمایت کی سطح","Backup number (if the first is busy)":"متبادل نمبر (اگر پہلا مصروف ہو)","Candidates, one per line as Name | Panel":"امیدوار، ہر سطر میں ایک: نام | پینل","College (unit)":"کالج (یونٹ)","College name":"کالج کا نام","College unit":"کالج یونٹ","Contacted so far":"اب تک رابطہ","Date":"تاریخ","Designation":"عہدہ","Division":"ڈویژن","Election body":"انتخابی ادارہ","Faculty strength (voters)":"اساتذہ کی تعداد (ووٹرز)","Focal person for":"فوکل پرسن برائے","Last visit":"آخری دورہ","Lead person":"ذمہ دار فرد","Level":"سطح","Name":"نام","Note":"نوٹ","Notes (demands raised, commitments made, follow-ups)":"نوٹس","Notes (staff-room demands, pending promotions, influential seniors, rival activity)":"نوٹس","Office WhatsApp number":"دفتر کا واٹس ایپ نمبر","Office name":"دفتر کا نام","Panel / coalition name":"پینل / اتحاد کا نام","People reached":"رابطہ شدہ افراد","Phone / WhatsApp":"فون / واٹس ایپ","Polling day":"پولنگ کا دن","Post / office":"عہدہ","Registered voters":"رجسٹرڈ ووٹرز","Rejected / invalid":"مسترد / غلط","Rep phone / WhatsApp":"نمائندے کا فون / واٹس ایپ","Reported by":"رپورٹ کنندہ","Role":"کردار","Seats to fill":"نشستوں کی تعداد","Status":"حیثیت","Title":"عنوان","Type":"قسم","Unit representative":"یونٹ نمائندہ","Who votes for it":"کون ووٹ دیتا ہے","Works at level":"کام کی سطح"};
+const UR={"Support across Punjab":"پنجاب بھر میں حمایت","Division scoreboard":"ڈویژن اسکور بورڈ","Priority targets":"ترجیحی اہداف","Next 14 days":"اگلے 14 دن","Units needing a visit":"دورہ طلب یونٹس","District scoreboard":"ضلعی اسکور بورڈ","Divisional team":"ڈویژنل ٹیم","Outreach in this division":"اس ڈویژن میں رابطہ مہم","Units":"یونٹس","College units":"کالج یونٹس","Outreach log":"رابطہ مہم کا ریکارڈ","Coming up":"آئندہ","Completed & past":"مکمل اور گزشتہ","Campaign team":"انتخابی ٹیم","Coordinator gaps":"خالی کوآرڈینیٹر عہدے","Candidates & seats":"امیدوار اور نشستیں","Data & sharing":"ڈیٹا اور شیئرنگ","Save a backup":"بیک اپ محفوظ کریں","Load a backup":"بیک اپ لوڈ کریں","App version & updates":"ایپ ورژن اور اپڈیٹس","Punjab colleges directory":"پنجاب کالجز ڈائریکٹری","Update units from a spreadsheet":"اسپریڈشیٹ سے یونٹس اپڈیٹ کریں","Install on your phone":"فون پر انسٹال کریں","Clear this device":"اس ڈیوائس کا ڈیٹا صاف کریں","Panel standings":"پینل پوزیشن","Posts on the ballot":"بیلٹ پر عہدے","How voters mark each ballot":"ووٹر بیلٹ پر نشان کیسے لگاتے ہیں","Paste result messages":"نتائج کے پیغامات چسپاں کریں","Provincial posts":"صوبائی عہدے","Divisional posts":"ڈویژنل عہدے","Unit level posts":"یونٹ سطح کے عہدے","Centre — Punjab":"مرکز — پنجاب","Division — Directorates":"ڈویژن — ڈائریکٹوریٹس","District":"ضلع","Unit — Colleges":"یونٹ — کالجز","Focal persons":"فوکل پرسنز","Settings":"ترتیبات","Add college unit":"کالج یونٹ شامل کریں","Edit unit":"یونٹ میں ترمیم","Plan outreach":"رابطہ مہم کی منصوبہ بندی","Edit outreach":"رابطہ مہم میں ترمیم","Add team member":"ٹیم رکن شامل کریں","Edit team member":"ٹیم رکن میں ترمیم","Add post":"عہدہ شامل کریں","Edit post":"عہدے میں ترمیم","Result sheet photo":"نتیجہ شیٹ کی تصویر","Units registered":"رجسٹرڈ یونٹس","Unit coordinators in place":"مقرر یونٹ کوآرڈینیٹرز","Voters (faculty)":"ووٹرز (اساتذہ)","Contacted":"رابطہ ہوا","Favourable":"حامی","Outreach done":"مکمل رابطہ مہم","Voters":"ووٹرز","Outreach":"رابطہ مہم","Divisional coordinators":"ڈویژنل کوآرڈینیٹرز","District coordinators":"ضلعی کوآرڈینیٹرز","Unit coordinators":"یونٹ کوآرڈینیٹرز","Units reported":"رپورٹ شدہ یونٹس","Votes cast":"ڈالے گئے ووٹ","Turnout":"ٹرن آؤٹ","Add member":"رکن شامل کریں","Add the first post":"پہلا عہدہ شامل کریں","Add unit":"یونٹ شامل کریں","Cancel":"منسوخ","Check for updates":"اپڈیٹ چیک کریں","Choose from gallery":"گیلری سے منتخب کریں","Clear all data":"تمام ڈیٹا صاف کریں","Close":"بند کریں","Copy":"کاپی","Delete":"حذف کریں","Delete result":"نتیجہ حذف کریں","Edit":"ترمیم","Edit posts & candidates":"عہدوں اور امیدواروں میں ترمیم","Enter unit result":"یونٹ کا نتیجہ درج کریں","Export CSV":"CSV ایکسپورٹ کریں","Import a .csv file":"CSV فائل امپورٹ کریں","Import results":"نتائج امپورٹ کریں","Install app":"ایپ انسٹال کریں","Load missing colleges":"باقی کالجز لوڈ کریں","Mark done":"مکمل","Merge a file":"فائل شامل کریں","Plan visit":"دورہ طے کریں","Posts & candidates":"عہدے اور امیدوار","Contesting panels":"مدمقابل پینل","Provincial panels":"صوبائی پینل","Replace with a file":"فائل سے تبدیل کریں","Restart now":"ابھی دوبارہ کھولیں","Save":"محفوظ کریں","Save backup (.json)":"بیک اپ محفوظ کریں","Save result":"نتیجہ محفوظ کریں","Send backup on WhatsApp…":"واٹس ایپ پر بیک اپ بھیجیں","Send photo only":"صرف تصویر بھیجیں","Set panel name & polling day":"پینل کا نام اور پولنگ کا دن","Set up posts":"عہدے ترتیب دیں","Set up posts & candidates":"عہدے اور امیدوار ترتیب دیں","Share awaited list":"باقی یونٹس کی فہرست بھیجیں","Share division brief":"ڈویژن کی رپورٹ بھیجیں","Share message elsewhere…":"پیغام کہیں اور بھیجیں","Share summary as message":"خلاصہ بطور پیغام بھیجیں","Share to WhatsApp…":"واٹس ایپ پر بھیجیں","Share today's brief":"آج کی رپورٹ بھیجیں","Tally":"گنتی","Today":"آج","Units list (.csv)":"یونٹس کی فہرست","Use backup office number":"دفتر کا متبادل نمبر","View":"دیکھیں","WhatsApp":"واٹس ایپ","Take photo of result sheet":"نتیجہ شیٹ کی تصویر لیں","Retake photo":"دوبارہ تصویر لیں","1 · Send result message":"نتیجے کا پیغام بھیجیں","2 · Send result file + photo":"نتیجہ فائل اور تصویر بھیجیں","Tap again to delete":"حذف کرنے کے لیے دوبارہ دبائیں","Tap again to clear everything":"سب صاف کرنے کے لیے دوبارہ دبائیں","Strong support":"بھرپور حمایت","Leaning":"مائل","Undecided":"غیر فیصلہ کن","Opposed":"مخالف","Not assessed":"جائزہ باقی","Support level":"حمایت کی سطح","Backup number (if the first is busy)":"متبادل نمبر (اگر پہلا مصروف ہو)","Candidates, one per line as Name | Panel":"امیدوار، ہر سطر میں ایک: نام | پینل","College (unit)":"کالج (یونٹ)","College name":"کالج کا نام","College unit":"کالج یونٹ","Contacted so far":"اب تک رابطہ","Date":"تاریخ","Designation":"عہدہ","Division":"ڈویژن","Election body":"انتخابی ادارہ","Faculty strength (voters)":"اساتذہ کی تعداد (ووٹرز)","Focal person for":"فوکل پرسن برائے","Last visit":"آخری دورہ","Lead person":"ذمہ دار فرد","Level":"سطح","Name":"نام","Note":"نوٹ","Notes (demands raised, commitments made, follow-ups)":"نوٹس","Notes (staff-room demands, pending promotions, influential seniors, rival activity)":"نوٹس","Office WhatsApp number":"دفتر کا واٹس ایپ نمبر","Office name":"دفتر کا نام","Panel / coalition name":"پینل / اتحاد کا نام","People reached":"رابطہ شدہ افراد","Phone / WhatsApp":"فون / واٹس ایپ","Polling day":"پولنگ کا دن","Post / office":"عہدہ","Registered voters":"رجسٹرڈ ووٹرز","Rejected / invalid":"مسترد / غلط","Rep phone / WhatsApp":"نمائندے کا فون / واٹس ایپ","Reported by":"رپورٹ کنندہ","Role":"کردار","Seats to fill":"نشستوں کی تعداد","Status":"حیثیت","Title":"عنوان","Type":"قسم","Unit representative":"یونٹ نمائندہ","Who votes for it":"کون ووٹ دیتا ہے","Works at level":"کام کی سطح"};
 const UR_START=[["Provincial ballot","صوبائی بیلٹ"],["Divisional ballot","ڈویژنل بیلٹ"],["Unit ballot","یونٹ بیلٹ"],["Reporting status","رپورٹنگ کی صورتحال"],["Reporting to","مرکزی دفتر کو رپورٹنگ"]];
 function urFor(t){if(UR[t])return UR[t];const m=/^Load (.+) ballot$/.exec(t);if(m)return m[1]+" بیلٹ لوڈ کریں";if(t.startsWith("Show more colleges"))return "مزید کالجز";const p=UR_START.find(x=>t.startsWith(x[0]));return p?p[1]:""}
 function urSpan(ur){const s=document.createElement("span");s.className="ur";s.lang="ur";s.dir="rtl";s.textContent=ur;return s}
